@@ -1,3 +1,4 @@
+
 --[[
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
@@ -486,7 +487,7 @@ function Library:CreateWindow(config)
         Visible = false,
         Parent = ScreenGui,
         ZIndex = 1,
-        ClipsDescendants = true,
+        ClipsDescendants = false,
     })
     Round(Outer, 14)
     local outerStroke = Stroke(Outer, Library.AccentColor, 1.2, 0.50)
@@ -747,7 +748,7 @@ function Library:CreateWindow(config)
 
         Tab.Button = tabButton
 
-        -- Content scrolling frame
+        -- Content area with TWO columns (left / right)
         local container = Create("ScrollingFrame", {
             Name = name .. "_Content",
             BackgroundTransparency = 1,
@@ -759,16 +760,53 @@ function Library:CreateWindow(config)
             Visible = false,
             ZIndex = 9,
             Parent = ContentHolder,
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ClipsDescendants = false,
         })
-        local contentList = ListLayout(container, 12)
-        Padding(container, 6, 18, 6, 6)
 
-        contentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            container.CanvasSize = UDim2.new(0, 0, 0, contentList.AbsoluteContentSize.Y + 24)
-        end)
+        local columns = Create("Frame", {
+            Name = "Columns",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -8, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = container,
+            ZIndex = 9,
+        })
+
+        local leftCol = Create("Frame", {
+            Name = "LeftColumn",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.5, -6, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Position = UDim2.fromOffset(0, 0),
+            Parent = columns,
+            ZIndex = 9,
+        })
+        local leftList = ListLayout(leftCol, 10)
+        Padding(leftCol, 4, 12, 4, 4)
+
+        local rightCol = Create("Frame", {
+            Name = "RightColumn",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.5, -6, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Position = UDim2.new(0.5, 6, 0, 0),
+            Parent = columns,
+            ZIndex = 9,
+        })
+        local rightList = ListLayout(rightCol, 10)
+        Padding(rightCol, 4, 12, 4, 4)
+
+        local function updateCanvas()
+            local h = math.max(leftList.AbsoluteContentSize.Y, rightList.AbsoluteContentSize.Y) + 24
+            columns.Size = UDim2.new(1, -8, 0, h)
+            container.CanvasSize = UDim2.new(0, 0, 0, h)
+        end
+        leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+        rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
 
         Tab.Container = container
+        Tab.LeftColumn = leftCol
+        Tab.RightColumn = rightCol
 
         local function ActivateTab()
             for _, otherTab in pairs(Window.Tabs) do
@@ -812,14 +850,17 @@ function Library:CreateWindow(config)
         -- ════════════════════════════════════════════════════════════════════
 
         function Tab:AddLeftGroupbox(titleText)
-            return self:AddGroupbox(titleText)
+            return self:AddGroupbox(titleText, "left")
         end
 
         function Tab:AddRightGroupbox(titleText)
-            return self:AddGroupbox(titleText)
+            return self:AddGroupbox(titleText, "right")
         end
 
-        function Tab:AddGroupbox(titleText)
+        function Tab:AddGroupbox(titleText, side)
+            side = side or "left"
+            local parentCol = (side == "right") and Tab.RightColumn or Tab.LeftColumn
+
             local Groupbox = {
                 Elements = {},
             }
@@ -831,7 +872,7 @@ function Library:CreateWindow(config)
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 50),
                 ZIndex = 10,
-                Parent = container,
+                Parent = parentCol,
             })
             Round(box, 12)
             -- Soft outer stroke only (no inner black bars)
@@ -1360,18 +1401,21 @@ function Library:CreateWindow(config)
                     Parent = dropButton,
                 })
 
+                -- Dropdown list parented to ScreenGui so it never clips behind the menu
                 local listFrame = Create("Frame", {
-                    BackgroundColor3 = Library.MainColor,
+                    Name = "FrostveilDropdown",
+                    BackgroundColor3 = Color3.fromRGB(14, 18, 28),
+                    BackgroundTransparency = 0.15,
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 0),
-                    Position = UDim2.new(0, 0, 1, 4),
+                    Size = UDim2.fromOffset(200, 0),
+                    Position = UDim2.fromOffset(0, 0),
                     Visible = false,
-                    ZIndex = 50,
-                    Parent = dropButton,
+                    ZIndex = 500,
+                    Parent = ScreenGui,
                     ClipsDescendants = true,
                 })
                 Round(listFrame, 8)
-                Stroke(listFrame, Library.OutlineColor, 1, 0.35)
+                Stroke(listFrame, Library.AccentColor, 1, 0.45)
 
                 local listScroll = Create("ScrollingFrame", {
                     BackgroundTransparency = 1,
@@ -1380,11 +1424,18 @@ function Library:CreateWindow(config)
                     ScrollBarThickness = 3,
                     ScrollBarImageColor3 = Library.AccentColor,
                     BorderSizePixel = 0,
-                    ZIndex = 51,
+                    ZIndex = 501,
                     Parent = listFrame,
                 })
                 local listLayout = ListLayout(listScroll, 2)
                 Padding(listScroll, 4, 4, 4, 4)
+
+                local function positionList()
+                    local absPos = dropButton.AbsolutePosition
+                    local absSize = dropButton.AbsoluteSize
+                    listFrame.Position = UDim2.fromOffset(absPos.X, absPos.Y + absSize.Y + 4)
+                    listFrame.Size = UDim2.fromOffset(math.max(absSize.X, 140), listFrame.Size.Y.Offset)
+                end
 
                 local DropdownObject = {
                     Type = "Dropdown",
@@ -1422,8 +1473,8 @@ function Library:CreateWindow(config)
                     end
                     for _, value in ipairs(values) do
                         local optionBtn = Create("TextButton", {
-                            BackgroundColor3 = selected[value] and Library.AccentColor or Library.BackgroundColor,
-                            BackgroundTransparency = selected[value] and 0.7 or 0,
+                            BackgroundColor3 = selected[value] and Library.AccentColor or Color3.fromRGB(20, 28, 42),
+                            BackgroundTransparency = selected[value] and 0.55 or 0.25,
                             BorderSizePixel = 0,
                             Size = UDim2.new(1, 0, 0, 26),
                             Font = Enum.Font.Gotham,
@@ -1432,7 +1483,7 @@ function Library:CreateWindow(config)
                             TextColor3 = Library.FontColor,
                             TextXAlignment = Enum.TextXAlignment.Left,
                             AutoButtonColor = false,
-                            ZIndex = 52,
+                            ZIndex = 502,
                             Parent = listScroll,
                         })
                         Round(optionBtn, 5)
@@ -1461,16 +1512,41 @@ function Library:CreateWindow(config)
                         end)
                     end
                     local height = math.min(#values, maxVisible) * 28 + 8
-                    listFrame.Size = UDim2.new(1, 0, 0, height)
+                    local absSize = dropButton.AbsoluteSize
+                    listFrame.Size = UDim2.fromOffset(math.max(absSize.X, 140), height)
                     listScroll.CanvasSize = UDim2.new(0, 0, 0, #values * 28 + 8)
+                    positionList()
                 end
 
                 dropButton.MouseButton1Click:Connect(function()
                     listFrame.Visible = not listFrame.Visible
                     if listFrame.Visible then
                         BuildList()
+                        positionList()
                     end
                 end)
+
+                -- Close dropdown when clicking elsewhere
+                Library:GiveSignal(UserInputService.InputBegan:Connect(function(input)
+                    if not listFrame.Visible then return end
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        task.defer(function()
+                            if not listFrame.Visible then return end
+                            local objs = LocalPlayer.PlayerGui:GetGuiObjectsAtPosition(Mouse.X, Mouse.Y)
+                            -- also check CoreGui path via AbsolutePosition bounds
+                            local pos = listFrame.AbsolutePosition
+                            local size = listFrame.AbsoluteSize
+                            local mx, my = Mouse.X, Mouse.Y
+                            local insideList = mx >= pos.X and mx <= pos.X + size.X and my >= pos.Y and my <= pos.Y + size.Y
+                            local dpos = dropButton.AbsolutePosition
+                            local dsize = dropButton.AbsoluteSize
+                            local insideBtn = mx >= dpos.X and mx <= dpos.X + dsize.X and my >= dpos.Y and my <= dpos.Y + dsize.Y
+                            if not insideList and not insideBtn then
+                                listFrame.Visible = false
+                            end
+                        end)
+                    end
+                end))
 
                 UpdateDisplay()
                 BuildList()
