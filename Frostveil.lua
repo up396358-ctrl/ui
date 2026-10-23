@@ -592,7 +592,7 @@ function Library:CreateWindow(config)
     local TitleLabel = Create("TextLabel", {
         Name = "Title",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -90, 1, 0),
+        Size = UDim2.new(1, -120, 1, 0),
         Position = UDim2.fromOffset(18, 0),
         Font = Enum.Font.GothamBold,
         Text = title,
@@ -603,6 +603,52 @@ function Library:CreateWindow(config)
         Parent = TopBar,
     })
     Library:AddToRegistry(TitleLabel, { TextColor3 = "FontColor" })
+
+    local isMinimized = false
+    local fullSize = size
+
+    -- Minimize button (next to close)
+    local MinButton = Create("TextButton", {
+        Name = "Minimize",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(32, 32),
+        Position = UDim2.new(1, -76, 0.5, -16),
+        Font = Enum.Font.GothamBold,
+        Text = "–",
+        TextSize = 20,
+        TextColor3 = Color3.fromRGB(175, 190, 215),
+        ZIndex = 12,
+        Parent = TopBar,
+    })
+    MinButton.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        local side = Outer:FindFirstChild("Sidebar")
+        local content = Outer:FindFirstChild("ContentHolder")
+        local div = Outer:FindFirstChild("SideDivider")
+        if isMinimized then
+            if side then side.Visible = false end
+            if content then content.Visible = false end
+            if div then div.Visible = false end
+            Outer.Size = UDim2.fromOffset(math.max(Outer.AbsoluteSize.X, 280), 44)
+            MinButton.Text = "+"
+        else
+            if side then side.Visible = true end
+            if content then content.Visible = true end
+            if div then div.Visible = true end
+            Outer.Size = fullSize
+            MinButton.Text = "–"
+        end
+    end)
+    MinButton.MouseEnter:Connect(function()
+        TweenService:Create(MinButton, TweenInfo.new(0.12), {
+            TextColor3 = Library.AccentColor
+        }):Play()
+    end)
+    MinButton.MouseLeave:Connect(function()
+        TweenService:Create(MinButton, TweenInfo.new(0.12), {
+            TextColor3 = Color3.fromRGB(175, 190, 215)
+        }):Play()
+    end)
 
     -- Close button
     local CloseButton = Create("TextButton", {
@@ -631,6 +677,13 @@ function Library:CreateWindow(config)
         }):Play()
     end)
 
+    function Window:Minimize()
+        if not isMinimized then MinButton.MouseButton1Click:Fire() end
+    end
+    function Window:Restore()
+        if isMinimized then MinButton.MouseButton1Click:Fire() end
+    end
+
     -- Sidebar
     local Sidebar = Create("Frame", {
         Name = "Sidebar",
@@ -648,6 +701,7 @@ function Library:CreateWindow(config)
 
     -- Sidebar / content divider with soft glow
     local sideDiv = Create("Frame", {
+        Name = "SideDivider",
         BackgroundColor3 = Library.AccentColor,
         BackgroundTransparency = 0.75,
         BorderSizePixel = 0,
@@ -691,11 +745,17 @@ function Library:CreateWindow(config)
         Window.Title = tostring(newTitle)
     end
 
-    -- Keybind (RightShift default)
+    -- Keybind (configurable — default RightShift)
+    if not Library.ToggleKeybind then
+        Library.ToggleKeybind = "RightShift"
+    end
     Library:GiveSignal(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
-        if input.KeyCode == Enum.KeyCode.RightShift then
-            Window:Toggle()
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            local keyName = input.KeyCode.Name
+            if keyName == tostring(Library.ToggleKeybind) then
+                Window:Toggle()
+            end
         end
     end))
 
@@ -733,15 +793,16 @@ function Library:CreateWindow(config)
             Parent = Sidebar,
         })
         Round(tabButton, 9)
-        Padding(tabButton, 0, 0, 16, 0)
+        -- Extra left padding so text never sits under the indicator bar
+        Padding(tabButton, 0, 0, 22, 8)
         local tabStroke = Stroke(tabButton, Library.OutlineColor, 1, 1)
 
         local indicator = Create("Frame", {
             Name = "Indicator",
             BackgroundColor3 = Library.AccentColor,
             BorderSizePixel = 0,
-            Size = UDim2.new(0, 3, 0.5, 0),
-            Position = UDim2.new(0, 0, 0.25, 0),
+            Size = UDim2.new(0, 3, 0.45, 0),
+            Position = UDim2.new(0, 6, 0.275, 0),
             Visible = false,
             ZIndex = 11,
             Parent = tabButton,
@@ -1653,6 +1714,7 @@ end
 
 function ThemeManager:ApplyToTab(tab)
     if not tab then return end
+
     local group = tab:AddLeftGroupbox("Themes")
     local names = {}
     for name in pairs(self.Themes) do
@@ -1660,11 +1722,103 @@ function ThemeManager:ApplyToTab(tab)
     end
     table.sort(names)
     group:AddDropdown("ThemeSelector", {
-        Text = "Theme",
+        Text = "Theme Preset",
         Values = names,
         Default = "Default",
         Callback = function(value)
             self:ApplyTheme(value)
+        end,
+    })
+
+    local colors = tab:AddLeftGroupbox("UI Colors")
+    local colorKeys = {
+        { "AccentColor", "Accent" },
+        { "FontColor", "Text Color" },
+        { "OutlineColor", "Outline" },
+        { "BackgroundColor", "Background" },
+        { "MainColor", "Main Panel" },
+        { "SidebarColor", "Sidebar" },
+        { "ToggleOnColor", "Toggle On" },
+        { "RiskColor", "Risk Text" },
+    }
+    for _, entry in ipairs(colorKeys) do
+        local key, label = entry[1], entry[2]
+        colors:AddButton({
+            Text = "Cycle " .. label,
+            Func = function()
+                local presets = {
+                    Color3.fromRGB(100, 210, 255),
+                    Color3.fromRGB(255, 95, 125),
+                    Color3.fromRGB(80, 220, 150),
+                    Color3.fromRGB(255, 190, 70),
+                    Color3.fromRGB(180, 130, 255),
+                    Color3.fromRGB(240, 245, 255),
+                    Color3.fromRGB(40, 50, 70),
+                    Color3.fromRGB(12, 14, 22),
+                }
+                local current = self.Library[key]
+                local idx = 1
+                for i, c in ipairs(presets) do
+                    if current and math.abs(c.R - current.R) < 0.02
+                        and math.abs(c.G - current.G) < 0.02
+                        and math.abs(c.B - current.B) < 0.02 then
+                        idx = i
+                        break
+                    end
+                end
+                local nextColor = presets[(idx % #presets) + 1]
+                self.Library[key] = nextColor
+                self.Library:UpdateColorsUsingRegistry()
+                Library:Notify(label .. " updated", 1.5)
+            end,
+        })
+    end
+
+    local controls = tab:AddLeftGroupbox("Menu Controls")
+    controls:AddLabel("Toggle key: " .. tostring(Library.ToggleKeybind or "RightShift"))
+    local keyOptions = {
+        "RightShift", "LeftShift", "RightControl", "LeftControl",
+        "Insert", "Delete", "Home", "End", "F4", "F5", "F6", "F7", "F8",
+    }
+    controls:AddDropdown("MenuToggleKey", {
+        Text = "Menu Toggle Key",
+        Values = keyOptions,
+        Default = tostring(Library.ToggleKeybind or "RightShift"),
+        Callback = function(value)
+            Library.ToggleKeybind = value
+            Library:Notify("Toggle key set to " .. value, 2)
+        end,
+    })
+    controls:AddToggle("SnowToggle", {
+        Text = "Snow Effect",
+        Default = true,
+        Callback = function(v)
+            for _, win in ipairs(Library.Windows or {}) do
+                if win.Snow and win.Snow.SetEnabled then
+                    win.Snow:SetEnabled(v)
+                end
+            end
+        end,
+    })
+    controls:AddButton({
+        Text = "Apply Background Texture",
+        Func = function()
+            for _, win in ipairs(Library.Windows or {}) do
+                if win.SetBackgroundImage then
+                    win:SetBackgroundImage("125296886011244", 0.45)
+                end
+            end
+            Library:Notify("Background texture applied", 2)
+        end,
+    })
+    controls:AddButton({
+        Text = "Clear Background",
+        Func = function()
+            for _, win in ipairs(Library.Windows or {}) do
+                if win.SetBackgroundImage then
+                    win:SetBackgroundImage(nil)
+                end
+            end
         end,
     })
 end
