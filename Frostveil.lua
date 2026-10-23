@@ -680,32 +680,36 @@ function Library:CreateWindow(config)
     local windowScale = Instance.new("UIScale")
     windowScale.Scale = 1
     windowScale.Parent = Outer
+    local windowBusy = false
 
     local function animateShow()
+        if windowBusy then return end
+        windowBusy = true
         Outer.Visible = true
-        windowScale.Scale = 0.94
-        TweenService:Create(windowScale, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        windowScale.Scale = 0.90
+        local t = TweenService:Create(windowScale, TweenInfo.new(0.35, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
             Scale = 1
-        }):Play()
+        })
+        t:Play()
+        t.Completed:Connect(function() windowBusy = false end)
     end
 
     local function animateHide()
-        TweenService:Create(windowScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Scale = 0.96
-        }):Play()
-        task.delay(0.16, function()
+        if windowBusy then return end
+        windowBusy = true
+        local t = TweenService:Create(windowScale, TweenInfo.new(0.22, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+            Scale = 0.92
+        })
+        t:Play()
+        t.Completed:Connect(function()
             Outer.Visible = false
             windowScale.Scale = 1
+            windowBusy = false
         end)
     end
 
-    -- Toggle visibility with animation
     function Window:Toggle()
-        if Outer.Visible then
-            animateHide()
-        else
-            animateShow()
-        end
+        if Outer.Visible then animateHide() else animateShow() end
     end
 
     function Window:Show()
@@ -839,61 +843,42 @@ function Library:CreateWindow(config)
         Tab.LeftColumn = leftCol
         Tab.RightColumn = rightCol
 
-        -- Content fade helper
         local contentScale = Instance.new("UIScale")
         contentScale.Scale = 1
         contentScale.Parent = container
 
         local function ActivateTab()
             if Tab.Active then return end
+
+            -- Deactivate others instantly (clean, no lag)
             for _, otherTab in pairs(Window.Tabs) do
-                if otherTab.Active and otherTab.Container then
-                    local otherScale = otherTab.Container:FindFirstChildOfClass("UIScale")
-                    TweenService:Create(otherTab.Button, TweenInfo.new(0.18, Enum.EasingStyle.Quint), {
-                        BackgroundTransparency = 1,
-                        TextColor3 = Color3.fromRGB(130, 155, 190),
-                    }):Play()
+                if otherTab ~= Tab then
+                    otherTab.Container.Visible = false
+                    otherTab.Button.BackgroundTransparency = 1
+                    otherTab.Button.TextColor3 = Color3.fromRGB(130, 155, 190)
                     local st = otherTab.Button:FindFirstChildOfClass("UIStroke")
-                    if st then
-                        TweenService:Create(st, TweenInfo.new(0.18), { Transparency = 1 }):Play()
-                    end
-                    if otherScale then
-                        TweenService:Create(otherScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
-                            Scale = 0.97
-                        }):Play()
-                    end
-                    task.delay(0.12, function()
-                        if not otherTab.Active then
-                            otherTab.Container.Visible = false
-                            if otherScale then otherScale.Scale = 1 end
-                        end
-                    end)
+                    if st then st.Transparency = 1 end
+                    otherTab.Active = false
                 end
-                otherTab.Active = false
             end
 
+            -- Show new tab with smooth scale-in
             container.Visible = true
-            contentScale.Scale = 0.96
-            -- Fade in content
-            for _, desc in ipairs(container:GetDescendants()) do
-                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
-                    local old = desc.TextTransparency
-                    desc.TextTransparency = 0.5
-                    TweenService:Create(desc, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {
-                        TextTransparency = old
-                    }):Play()
-                end
-            end
-            TweenService:Create(contentScale, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            contentScale.Scale = 0.97
+            TweenService:Create(contentScale, TweenInfo.new(0.28, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                 Scale = 1
             }):Play()
-            TweenService:Create(tabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
+
+            TweenService:Create(tabButton, TweenInfo.new(0.25, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                 BackgroundTransparency = 0.55,
                 TextColor3 = Library.FontColor,
             }):Play()
             if tabStroke then
-                TweenService:Create(tabStroke, TweenInfo.new(0.2), { Transparency = 0.45 }):Play()
+                TweenService:Create(tabStroke, TweenInfo.new(0.25, Enum.EasingStyle.Exponential), {
+                    Transparency = 0.45
+                }):Play()
             end
+
             Tab.Active = true
             Window.CurrentTab = Tab
         end
@@ -1047,19 +1032,9 @@ function Library:CreateWindow(config)
                     ToggleObject.Value = state
                     local targetPos = state and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
                     local targetColor = state and Library.ToggleOnColor or Library.ToggleOffColor
-                    local info = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    local info = TweenInfo.new(0.28, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
                     TweenService:Create(knob, info, { Position = targetPos }):Play()
                     TweenService:Create(track, info, { BackgroundColor3 = targetColor }):Play()
-                    -- Micro bounce on knob
-                    local scale = knob:FindFirstChildOfClass("UIScale")
-                    if not scale then
-                        scale = Instance.new("UIScale")
-                        scale.Parent = knob
-                    end
-                    scale.Scale = 0.85
-                    TweenService:Create(scale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                        Scale = 1
-                    }):Play()
                     if not noCallback and callback then
                         Library:SafeCallback(callback, state)
                     end
@@ -1198,9 +1173,9 @@ function Library:CreateWindow(config)
                     end
                     SliderObject.Value = value
                     local percent = math.clamp((value - min) / (max - min), 0, 1)
-                    local tweenInfo = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                    TweenService:Create(fill, tweenInfo, { Size = UDim2.new(percent, 0, 1, 0) }):Play()
-                    TweenService:Create(knob, tweenInfo, { Position = UDim2.new(percent, 0, 0.5, 0) }):Play()
+                    -- Instant while dragging = responsive; no laggy tweens
+                    fill.Size = UDim2.new(percent, 0, 1, 0)
+                    knob.Position = UDim2.new(percent, 0, 0.5, 0)
                     valueLabel.Text = tostring(value) .. suffix
                     if not noCallback and callback then
                         Library:SafeCallback(callback, value)
@@ -1213,19 +1188,16 @@ function Library:CreateWindow(config)
                 end
 
                 local draggingSlider = false
-                local function beginDrag()
-                    draggingSlider = true
-                end
                 barBackground.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        beginDrag()
+                        draggingSlider = true
                         local relative = (Mouse.X - barBackground.AbsolutePosition.X) / barBackground.AbsoluteSize.X
                         SetValue(min + (max - min) * math.clamp(relative, 0, 1))
                     end
                 end)
                 knob.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        beginDrag()
+                        draggingSlider = true
                     end
                 end)
                 Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
@@ -1284,9 +1256,8 @@ function Library:CreateWindow(config)
 
                 local lastClick = 0
                 button.MouseButton1Click:Connect(function()
-                    -- Press pulse
-                    btnScale.Scale = 0.96
-                    TweenService:Create(btnScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                    btnScale.Scale = 0.97
+                    TweenService:Create(btnScale, TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                         Scale = 1
                     }):Play()
                     if doubleClick then
@@ -1684,33 +1655,33 @@ function Library:CreateWindow(config)
                     BuildList()
                     positionList()
                     listFrame.Visible = true
-                    listScale.Scale = 0.92
-                    listFrame.BackgroundTransparency = 0.6
-                    TweenService:Create(listScale, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                    listScale.Scale = 0.88
+                    listFrame.BackgroundTransparency = 0.5
+                    TweenService:Create(listScale, TweenInfo.new(0.22, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                         Scale = 1
                     }):Play()
-                    TweenService:Create(listFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-                        BackgroundTransparency = 0.15
+                    TweenService:Create(listFrame, TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
+                        BackgroundTransparency = 0.12
                     }):Play()
-                    TweenService:Create(arrow, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                    TweenService:Create(arrow, TweenInfo.new(0.22, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                         Rotation = 180
                     }):Play()
                 end
 
                 local function closeDropdown()
-                    TweenService:Create(listScale, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {
-                        Scale = 0.94
+                    TweenService:Create(listScale, TweenInfo.new(0.15, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+                        Scale = 0.92
                     }):Play()
-                    TweenService:Create(listFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {
-                        BackgroundTransparency = 0.6
+                    TweenService:Create(listFrame, TweenInfo.new(0.15, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+                        BackgroundTransparency = 0.55
                     }):Play()
-                    TweenService:Create(arrow, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+                    TweenService:Create(arrow, TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                         Rotation = 0
                     }):Play()
-                    task.delay(0.12, function()
+                    task.delay(0.14, function()
                         listFrame.Visible = false
                         listScale.Scale = 1
-                        listFrame.BackgroundTransparency = 0.15
+                        listFrame.BackgroundTransparency = 0.12
                     end)
                 end
 
