@@ -1068,12 +1068,12 @@ function Library:CreateWindow(config)
                 local barBackground = Create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(12, 16, 26),
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 10),
-                    Position = UDim2.fromOffset(0, 28),
+                    Size = UDim2.new(1, 0, 0, 8),
+                    Position = UDim2.fromOffset(0, 30),
                     ZIndex = 12,
                     Parent = holder,
                 })
-                Round(barBackground, 5)
+                Round(barBackground, 4)
                 Stroke(barBackground, Library.OutlineColor, 1, 0.6)
 
                 local fill = Create("Frame", {
@@ -1083,7 +1083,7 @@ function Library:CreateWindow(config)
                     ZIndex = 13,
                     Parent = barBackground,
                 })
-                Round(fill, 5)
+                Round(fill, 4)
                 Library:AddToRegistry(fill, { BackgroundColor3 = "AccentColor" })
                 local fillGrad = Instance.new("UIGradient")
                 fillGrad.Color = ColorSequence.new({
@@ -1091,6 +1091,19 @@ function Library:CreateWindow(config)
                     ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 230, 255)),
                 })
                 fillGrad.Parent = fill
+
+                -- Slider knob / dot
+                local knob = Create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(245, 250, 255),
+                    BorderSizePixel = 0,
+                    Size = UDim2.fromOffset(16, 16),
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0, 0, 0.5, 0),
+                    ZIndex = 14,
+                    Parent = barBackground,
+                })
+                Round(knob, 8)
+                Stroke(knob, Library.AccentColor, 1.5, 0.25)
 
                 local SliderObject = {
                     Type = "Slider",
@@ -1109,8 +1122,9 @@ function Library:CreateWindow(config)
                         value = math.floor(value * mult + 0.5) / mult
                     end
                     SliderObject.Value = value
-                    local percent = (value - min) / (max - min)
-                    fill.Size = UDim2.new(math.clamp(percent, 0, 1), 0, 1, 0)
+                    local percent = math.clamp((value - min) / (max - min), 0, 1)
+                    fill.Size = UDim2.new(percent, 0, 1, 0)
+                    knob.Position = UDim2.new(percent, 0, 0.5, 0)
                     valueLabel.Text = tostring(value) .. suffix
                     if not noCallback and callback then
                         Library:SafeCallback(callback, value)
@@ -1123,9 +1137,19 @@ function Library:CreateWindow(config)
                 end
 
                 local draggingSlider = false
+                local function beginDrag()
+                    draggingSlider = true
+                end
                 barBackground.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingSlider = true
+                        beginDrag()
+                        local relative = (Mouse.X - barBackground.AbsolutePosition.X) / barBackground.AbsoluteSize.X
+                        SetValue(min + (max - min) * math.clamp(relative, 0, 1))
+                    end
+                end)
+                knob.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        beginDrag()
                     end
                 end)
                 Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
@@ -1364,7 +1388,7 @@ function Library:CreateWindow(config)
                 local multi      = info.Multi or false
                 local allowNull  = info.AllowNull or false
                 local callback   = info.Callback
-                local maxVisible = info.MaxVisibleDropdownItems or 6
+                local maxVisible = math.clamp(info.MaxVisibleDropdownItems or 6, 1, 6)
 
                 if not default and not allowNull and #values > 0 then
                     default = multi and {} or values[1]
@@ -1457,11 +1481,14 @@ function Library:CreateWindow(config)
                     BackgroundTransparency = 1,
                     Size = UDim2.fromScale(1, 1),
                     CanvasSize = UDim2.new(0, 0, 0, 0),
-                    ScrollBarThickness = 3,
+                    ScrollBarThickness = 4,
                     ScrollBarImageColor3 = Library.AccentColor,
                     BorderSizePixel = 0,
                     ZIndex = 501,
                     Parent = listFrame,
+                    ScrollingEnabled = true,
+                    ElasticBehavior = Enum.ElasticBehavior.Never,
+                    CanvasSize = UDim2.new(0, 0, 0, 0),
                 })
                 local listLayout = ListLayout(listScroll, 2)
                 Padding(listScroll, 4, 4, 4, 4)
@@ -1744,13 +1771,13 @@ function ThemeManager:ApplyToTab(tab)
 
     -- Click button → press any key to bind (no dropdown)
     local listening = false
-    local bindLabel = "Menu Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift")
-    controls:AddLabel(bindLabel)
+    local keyLabel = controls:AddLabel("Menu Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift"))
     controls:AddButton({
         Text = "Set Toggle Key (click then press key)",
         Func = function()
             if listening then return end
             listening = true
+            keyLabel:SetText("Menu Toggle Key: [press a key...]")
             Library:Notify("Press any key to bind menu toggle...", 3)
             local conn
             conn = UserInputService.InputBegan:Connect(function(input, gp)
@@ -1760,15 +1787,16 @@ function ThemeManager:ApplyToTab(tab)
                     Library.ToggleKeybind = name
                     listening = false
                     pcall(function() conn:Disconnect() end)
+                    keyLabel:SetText("Menu Toggle Key: " .. name)
                     Library:Notify("Toggle key set to " .. name, 2)
                 end
             end)
             Library:GiveSignal(conn)
-            -- auto cancel after 5s
             task.delay(5, function()
                 if listening then
                     listening = false
                     pcall(function() conn:Disconnect() end)
+                    keyLabel:SetText("Menu Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift"))
                     Library:Notify("Key bind cancelled", 2)
                 end
             end)
