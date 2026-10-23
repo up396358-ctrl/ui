@@ -644,8 +644,8 @@ function Library:CreateWindow(config)
         Outer.Visible = true
     end
 
-    -- Sidebar (fully transparent — no gray panel)
-    local Sidebar = Create("Frame", {
+    -- Sidebar (scrollable tab list)
+    local Sidebar = Create("ScrollingFrame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
         BackgroundTransparency = 1,
@@ -654,12 +654,17 @@ function Library:CreateWindow(config)
         Position = UDim2.fromOffset(0, 44),
         Parent = Outer,
         ZIndex = 8,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Library.AccentColor,
+        ScrollingEnabled = true,
+        ElasticBehavior = Enum.ElasticBehavior.Never,
+        ClipsDescendants = true,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     Library:AddToRegistry(Sidebar, { BackgroundColor3 = "SidebarColor" })
     ListLayout(Sidebar, 6)
     Padding(Sidebar, 16, 14, 12, 12)
-
-    -- (side divider removed — clean transparent look)
 
     -- Content holder
     local ContentHolder = Create("Frame", {
@@ -669,6 +674,7 @@ function Library:CreateWindow(config)
         Position = UDim2.fromOffset(168, 54),
         Parent = Outer,
         ZIndex = 8,
+        ClipsDescendants = true,
     })
 
     -- Snow
@@ -783,26 +789,30 @@ function Library:CreateWindow(config)
 
         Tab.Button = tabButton
 
-        -- Content area with TWO columns (left / right)
+        -- Content area with TWO columns — fully scrollable
         local container = Create("ScrollingFrame", {
             Name = name .. "_Content",
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
             CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 3,
+            ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.AccentColor,
             BorderSizePixel = 0,
             Visible = false,
             ZIndex = 9,
             Parent = ContentHolder,
-            ClipsDescendants = false,
+            ClipsDescendants = true,
+            ScrollingEnabled = true,
+            ElasticBehavior = Enum.ElasticBehavior.Never,
+            ScrollBarImageTransparency = 0.25,
+            Active = true,
         })
 
         local columns = Create("Frame", {
             Name = "Columns",
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -8, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
+            Size = UDim2.new(1, -12, 0, 0),
+            Position = UDim2.fromOffset(0, 0),
             Parent = container,
             ZIndex = 9,
         })
@@ -817,7 +827,7 @@ function Library:CreateWindow(config)
             ZIndex = 9,
         })
         local leftList = ListLayout(leftCol, 10)
-        Padding(leftCol, 4, 12, 4, 4)
+        Padding(leftCol, 6, 16, 6, 6)
 
         local rightCol = Create("Frame", {
             Name = "RightColumn",
@@ -829,15 +839,17 @@ function Library:CreateWindow(config)
             ZIndex = 9,
         })
         local rightList = ListLayout(rightCol, 10)
-        Padding(rightCol, 4, 12, 4, 4)
+        Padding(rightCol, 6, 16, 6, 6)
 
         local function updateCanvas()
-            local h = math.max(leftList.AbsoluteContentSize.Y, rightList.AbsoluteContentSize.Y) + 24
-            columns.Size = UDim2.new(1, -8, 0, h)
+            local h = math.max(leftList.AbsoluteContentSize.Y, rightList.AbsoluteContentSize.Y) + 28
+            columns.Size = UDim2.new(1, -12, 0, h)
             container.CanvasSize = UDim2.new(0, 0, 0, h)
         end
         leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+        -- Keep canvas in sync after elements resize
+        task.defer(updateCanvas)
 
         Tab.Container = container
         Tab.LeftColumn = leftCol
@@ -845,7 +857,7 @@ function Library:CreateWindow(config)
 
         local contentScale = Instance.new("UIScale")
         contentScale.Scale = 1
-        contentScale.Parent = container
+        contentScale.Parent = columns
 
         local function ActivateTab()
             if Tab.Active then return end
