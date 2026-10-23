@@ -572,24 +572,6 @@ function Library:CreateWindow(config)
     })
     Library:AddToRegistry(TopBar, { BackgroundColor3 = "MainColor" })
 
-    -- Gradient accent under top bar
-    local topAccent = Create("Frame", {
-        BackgroundColor3 = Library.AccentColor,
-        BackgroundTransparency = 0.25,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 2),
-        Position = UDim2.new(0, 0, 1, 0),
-        ZIndex = 11,
-        Parent = TopBar,
-    })
-    local topGrad = Instance.new("UIGradient")
-    topGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 80, 140)),
-        ColorSequenceKeypoint.new(0.5, Library.AccentColor),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 80, 140)),
-    })
-    topGrad.Parent = topAccent
-
     local TitleLabel = Create("TextLabel", {
         Name = "Title",
         BackgroundTransparency = 1,
@@ -621,24 +603,9 @@ function Library:CreateWindow(config)
         ZIndex = 12,
         Parent = TopBar,
     })
+    -- Minimize = fully hide UI (keybind shows it again)
     MinButton.MouseButton1Click:Connect(function()
-        isMinimized = not isMinimized
-        local side = Outer:FindFirstChild("Sidebar")
-        local content = Outer:FindFirstChild("ContentHolder")
-        local div = Outer:FindFirstChild("SideDivider")
-        if isMinimized then
-            if side then side.Visible = false end
-            if content then content.Visible = false end
-            if div then div.Visible = false end
-            Outer.Size = UDim2.fromOffset(math.max(Outer.AbsoluteSize.X, 280), 44)
-            MinButton.Text = "+"
-        else
-            if side then side.Visible = true end
-            if content then content.Visible = true end
-            if div then div.Visible = true end
-            Outer.Size = fullSize
-            MinButton.Text = "–"
-        end
+        Outer.Visible = false
     end)
     MinButton.MouseEnter:Connect(function()
         TweenService:Create(MinButton, TweenInfo.new(0.12), {
@@ -651,7 +618,7 @@ function Library:CreateWindow(config)
         }):Play()
     end)
 
-    -- Close button
+    -- Close button = fully unload library / shut off
     local CloseButton = Create("TextButton", {
         Name = "Close",
         BackgroundTransparency = 1,
@@ -665,7 +632,7 @@ function Library:CreateWindow(config)
         Parent = TopBar,
     })
     CloseButton.MouseButton1Click:Connect(function()
-        Outer.Visible = false
+        Library:Unload()
     end)
     CloseButton.MouseEnter:Connect(function()
         TweenService:Create(CloseButton, TweenInfo.new(0.12), {
@@ -679,10 +646,10 @@ function Library:CreateWindow(config)
     end)
 
     function Window:Minimize()
-        if not isMinimized then MinButton.MouseButton1Click:Fire() end
+        Outer.Visible = false
     end
     function Window:Restore()
-        if isMinimized then MinButton.MouseButton1Click:Fire() end
+        Outer.Visible = true
     end
 
     -- Sidebar (nearly fully transparent)
@@ -700,17 +667,7 @@ function Library:CreateWindow(config)
     ListLayout(Sidebar, 6)
     Padding(Sidebar, 16, 14, 12, 12)
 
-    -- Sidebar / content divider with soft glow
-    local sideDiv = Create("Frame", {
-        Name = "SideDivider",
-        BackgroundColor3 = Library.AccentColor,
-        BackgroundTransparency = 0.75,
-        BorderSizePixel = 0,
-        Size = UDim2.new(0, 1, 1, -44),
-        Position = UDim2.fromOffset(158, 44),
-        ZIndex = 9,
-        Parent = Outer,
-    })
+    -- (side divider removed — clean transparent look)
 
     -- Content holder
     local ContentHolder = Create("Frame", {
