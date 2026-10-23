@@ -460,7 +460,7 @@ function Library:CreateWindow(config)
     local autoShow              = config.AutoShow ~= false
     local center                = config.Center ~= false
     local backgroundImage       = config.BackgroundImage or config.Background or nil
-    local backgroundTransparency = config.BackgroundTransparency or 0.40
+    local backgroundTransparency = config.BackgroundTransparency or 0.12
     local tabPadding            = config.TabPadding or 4
     local menuFadeTime          = config.MenuFadeTime or 0.2
 
@@ -478,7 +478,7 @@ function Library:CreateWindow(config)
     local Outer = Create("Frame", {
         Name = "Outer",
         BackgroundColor3 = Library.BackgroundColor,
-        BackgroundTransparency = 0.35,
+        BackgroundTransparency = 0.92,
         BorderSizePixel = 0,
         Size = size,
         Position = UDim2.fromScale(0.5, 0.5),
@@ -489,7 +489,7 @@ function Library:CreateWindow(config)
         ClipsDescendants = true,
     })
     Round(Outer, 14)
-    local outerStroke = Stroke(Outer, Library.AccentColor, 1.4, 0.55)
+    local outerStroke = Stroke(Outer, Library.AccentColor, 1.4, 0.40)
     -- Soft outer glow ring
     local glow = Create("Frame", {
         Name = "Glow",
@@ -522,7 +522,7 @@ function Library:CreateWindow(config)
     local BgOverlay = Create("Frame", {
         Name = "BackgroundOverlay",
         BackgroundColor3 = Library.BackgroundColor,
-        BackgroundTransparency = 0.55,
+        BackgroundTransparency = 0.92,
         BorderSizePixel = 0,
         Size = UDim2.fromScale(1, 1),
         ZIndex = 2,
@@ -550,11 +550,11 @@ function Library:CreateWindow(config)
         Window:SetBackgroundImage(backgroundImage, backgroundTransparency)
     end
 
-    -- Top bar (glass strip — lets background show)
+    -- Top bar (nearly fully transparent)
     local TopBar = Create("Frame", {
         Name = "TopBar",
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.35,
+        BackgroundTransparency = 0.85,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 44),
         Parent = Outer,
@@ -563,7 +563,7 @@ function Library:CreateWindow(config)
     Round(TopBar, 14)
     Create("Frame", {
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.35,
+        BackgroundTransparency = 0.85,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 18),
         Position = UDim2.new(0, 0, 1, -18),
@@ -685,11 +685,11 @@ function Library:CreateWindow(config)
         if isMinimized then MinButton.MouseButton1Click:Fire() end
     end
 
-    -- Sidebar (transparent glass)
+    -- Sidebar (nearly fully transparent)
     local Sidebar = Create("Frame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
-        BackgroundTransparency = 0.40,
+        BackgroundTransparency = 0.88,
         BorderSizePixel = 0,
         Size = UDim2.new(0, 158, 1, -44),
         Position = UDim2.fromOffset(0, 44),
@@ -879,20 +879,20 @@ function Library:CreateWindow(config)
             local box = Create("Frame", {
                 Name = titleText,
                 BackgroundColor3 = Library.MainColor,
-                BackgroundTransparency = 0.45,
+                BackgroundTransparency = 0.88,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 50),
                 ZIndex = 10,
                 Parent = container,
             })
             Round(box, 11)
-            Stroke(box, Library.OutlineColor, 1.2, 0.50)
+            Stroke(box, Library.OutlineColor, 1.2, 0.55)
             Library:AddToRegistry(box, { BackgroundColor3 = "MainColor" })
 
-            -- Title bar strip (no thick accent line)
+            -- Title bar strip
             local titleBar = Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(12, 16, 26),
-                BackgroundTransparency = 0.55,
+                BackgroundTransparency = 0.90,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 30),
                 ZIndex = 11,
@@ -901,7 +901,7 @@ function Library:CreateWindow(config)
             Round(titleBar, 11)
             Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(12, 16, 26),
-                BackgroundTransparency = 0.55,
+                BackgroundTransparency = 0.90,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 12),
                 Position = UDim2.new(0, 0, 1, -12),
@@ -1689,20 +1689,40 @@ function ThemeManager:ApplyToTab(tab)
     if not tab then return end
 
     local controls = tab:AddLeftGroupbox("Menu Controls")
-    controls:AddLabel("Toggle key: " .. tostring(Library.ToggleKeybind or "RightShift"))
-    local keyOptions = {
-        "RightShift", "LeftShift", "RightControl", "LeftControl",
-        "Insert", "Delete", "Home", "End", "F4", "F5", "F6", "F7", "F8",
-    }
-    controls:AddDropdown("MenuToggleKey", {
-        Text = "Menu Toggle Key",
-        Values = keyOptions,
-        Default = tostring(Library.ToggleKeybind or "RightShift"),
-        Callback = function(value)
-            Library.ToggleKeybind = value
-            Library:Notify("Toggle key set to " .. value, 2)
+
+    -- Click button → press any key to bind (no dropdown)
+    local listening = false
+    local bindLabel = "Menu Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift")
+    controls:AddLabel(bindLabel)
+    controls:AddButton({
+        Text = "Set Toggle Key (click then press key)",
+        Func = function()
+            if listening then return end
+            listening = true
+            Library:Notify("Press any key to bind menu toggle...", 3)
+            local conn
+            conn = UserInputService.InputBegan:Connect(function(input, gp)
+                if gp then return end
+                if input.UserInputType == Enum.UserInputType.Keyboard then
+                    local name = input.KeyCode.Name
+                    Library.ToggleKeybind = name
+                    listening = false
+                    pcall(function() conn:Disconnect() end)
+                    Library:Notify("Toggle key set to " .. name, 2)
+                end
+            end)
+            Library:GiveSignal(conn)
+            -- auto cancel after 5s
+            task.delay(5, function()
+                if listening then
+                    listening = false
+                    pcall(function() conn:Disconnect() end)
+                    Library:Notify("Key bind cancelled", 2)
+                end
+            end)
         end,
     })
+
     controls:AddToggle("SnowToggle", {
         Text = "Snow Effect",
         Default = true,
@@ -1719,8 +1739,7 @@ function ThemeManager:ApplyToTab(tab)
         Func = function()
             for _, win in ipairs(Library.Windows or {}) do
                 if win.SetBackgroundImage then
-                    -- User texture id
-                    win:SetBackgroundImage("125296886011244", 0.25)
+                    win:SetBackgroundImage("125296886011244", 0.15)
                 end
             end
             Library:Notify("Background texture applied", 2)
