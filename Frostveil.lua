@@ -78,16 +78,17 @@ local Library = {
     Windows         = {},
     ScreenGui       = ScreenGui,
 
-    -- Theme (Exotic Ice / Dark)
-    FontColor       = Color3.fromRGB(235, 245, 255),
-    MainColor       = Color3.fromRGB(14, 17, 26),
-    BackgroundColor = Color3.fromRGB(9, 11, 18),
-    AccentColor     = Color3.fromRGB(110, 200, 255),
-    OutlineColor    = Color3.fromRGB(38, 55, 85),
-    RiskColor       = Color3.fromRGB(255, 85, 115),
-    SidebarColor    = Color3.fromRGB(11, 13, 21),
-    ToggleOnColor   = Color3.fromRGB(90, 190, 255),
-    ToggleOffColor  = Color3.fromRGB(35, 45, 65),
+    -- Theme (Premium Void Ice)
+    FontColor       = Color3.fromRGB(242, 248, 255),
+    MainColor       = Color3.fromRGB(16, 20, 32),
+    BackgroundColor = Color3.fromRGB(7, 9, 14),
+    AccentColor     = Color3.fromRGB(100, 210, 255),
+    OutlineColor    = Color3.fromRGB(48, 78, 120),
+    RiskColor       = Color3.fromRGB(255, 95, 125),
+    SidebarColor    = Color3.fromRGB(9, 11, 18),
+    ToggleOnColor   = Color3.fromRGB(70, 195, 255),
+    ToggleOffColor  = Color3.fromRGB(26, 34, 52),
+    GroupTitleColor = Color3.fromRGB(150, 215, 255),
     Black           = Color3.new(0, 0, 0),
     Font            = Enum.Font.GothamMedium,
 
@@ -486,10 +487,22 @@ function Library:CreateWindow(config)
         ZIndex = 1,
         ClipsDescendants = true,
     })
-    Round(Outer, 12)
-    Stroke(Outer, Library.OutlineColor, 1.6, 0.22)
+    Round(Outer, 14)
+    local outerStroke = Stroke(Outer, Library.AccentColor, 1.4, 0.55)
+    -- Soft outer glow ring
+    local glow = Create("Frame", {
+        Name = "Glow",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 12, 1, 12),
+        Position = UDim2.fromOffset(-6, -6),
+        ZIndex = 0,
+        Parent = Outer,
+    })
+    Round(glow, 18)
+    local glowStroke = Stroke(glow, Library.AccentColor, 4, 0.88)
     Window.Holder = Outer
     Library:AddToRegistry(Outer, { BackgroundColor3 = "BackgroundColor" })
+    Library:AddToRegistry(outerStroke, { Color = "AccentColor" })
 
     -- Background image layer (supports any rbxassetid)
     local BgImage = Create("ImageLabel", {
@@ -536,38 +549,45 @@ function Library:CreateWindow(config)
         Window:SetBackgroundImage(backgroundImage, backgroundTransparency)
     end
 
-    -- Top bar
+    -- Top bar (premium glass strip)
     local TopBar = Create("Frame", {
         Name = "TopBar",
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.04,
+        BackgroundTransparency = 0.02,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 42),
+        Size = UDim2.new(1, 0, 0, 44),
         Parent = Outer,
         ZIndex = 10,
     })
-    Round(TopBar, 12)
+    Round(TopBar, 14)
     Create("Frame", {
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.04,
+        BackgroundTransparency = 0.02,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 16),
-        Position = UDim2.new(0, 0, 1, -16),
+        Size = UDim2.new(1, 0, 0, 18),
+        Position = UDim2.new(0, 0, 1, -18),
         Parent = TopBar,
         ZIndex = 10,
     })
     Library:AddToRegistry(TopBar, { BackgroundColor3 = "MainColor" })
 
-    -- Accent line under top bar
-    Create("Frame", {
+    -- Gradient accent under top bar
+    local topAccent = Create("Frame", {
         BackgroundColor3 = Library.AccentColor,
-        BackgroundTransparency = 0.50,
+        BackgroundTransparency = 0.25,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 1),
+        Size = UDim2.new(1, 0, 0, 2),
         Position = UDim2.new(0, 0, 1, 0),
         ZIndex = 11,
         Parent = TopBar,
     })
+    local topGrad = Instance.new("UIGradient")
+    topGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 80, 140)),
+        ColorSequenceKeypoint.new(0.5, Library.AccentColor),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 80, 140)),
+    })
+    topGrad.Parent = topAccent
 
     local TitleLabel = Create("TextLabel", {
         Name = "Title",
@@ -615,24 +635,24 @@ function Library:CreateWindow(config)
     local Sidebar = Create("Frame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
-        BackgroundTransparency = 0.06,
+        BackgroundTransparency = 0.0,
         BorderSizePixel = 0,
-        Size = UDim2.new(0, 150, 1, -42),
-        Position = UDim2.fromOffset(0, 42),
+        Size = UDim2.new(0, 158, 1, -44),
+        Position = UDim2.fromOffset(0, 44),
         Parent = Outer,
         ZIndex = 8,
     })
     Library:AddToRegistry(Sidebar, { BackgroundColor3 = "SidebarColor" })
-    ListLayout(Sidebar, tabPadding)
-    Padding(Sidebar, 14, 12, 10, 10)
+    ListLayout(Sidebar, 6)
+    Padding(Sidebar, 16, 14, 12, 12)
 
-    -- Sidebar / content divider
-    Create("Frame", {
-        BackgroundColor3 = Library.OutlineColor,
-        BackgroundTransparency = 0.42,
+    -- Sidebar / content divider with soft glow
+    local sideDiv = Create("Frame", {
+        BackgroundColor3 = Library.AccentColor,
+        BackgroundTransparency = 0.75,
         BorderSizePixel = 0,
-        Size = UDim2.new(0, 1, 1, -42),
-        Position = UDim2.fromOffset(150, 42),
+        Size = UDim2.new(0, 1, 1, -44),
+        Position = UDim2.fromOffset(158, 44),
         ZIndex = 9,
         Parent = Outer,
     })
@@ -641,8 +661,8 @@ function Library:CreateWindow(config)
     local ContentHolder = Create("Frame", {
         Name = "ContentHolder",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -162, 1, -54),
-        Position = UDim2.fromOffset(160, 50),
+        Size = UDim2.new(1, -172, 1, -58),
+        Position = UDim2.fromOffset(168, 54),
         Parent = Outer,
         ZIndex = 8,
     })
@@ -696,31 +716,32 @@ function Library:CreateWindow(config)
             Active = false,
         }
 
-        -- Sidebar button
+        -- Sidebar button (premium pill)
         local tabButton = Create("TextButton", {
             Name = name,
             BackgroundColor3 = Library.MainColor,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 34),
+            Size = UDim2.new(1, 0, 0, 36),
             Font = Enum.Font.GothamMedium,
             Text = name,
             TextSize = 13,
-            TextColor3 = Color3.fromRGB(145, 165, 195),
+            TextColor3 = Color3.fromRGB(130, 155, 190),
             TextXAlignment = Enum.TextXAlignment.Left,
             AutoButtonColor = false,
             LayoutOrder = order,
             ZIndex = 10,
             Parent = Sidebar,
         })
-        Round(tabButton, 8)
-        Padding(tabButton, 0, 0, 14, 0)
+        Round(tabButton, 9)
+        Padding(tabButton, 0, 0, 16, 0)
+        local tabStroke = Stroke(tabButton, Library.OutlineColor, 1, 1)
 
         local indicator = Create("Frame", {
             Name = "Indicator",
             BackgroundColor3 = Library.AccentColor,
             BorderSizePixel = 0,
-            Size = UDim2.new(0, 3, 0.55, 0),
-            Position = UDim2.new(0, 0, 0.225, 0),
+            Size = UDim2.new(0, 3, 0.5, 0),
+            Position = UDim2.new(0, 0, 0.25, 0),
             Visible = false,
             ZIndex = 11,
             Parent = tabButton,
@@ -757,15 +778,18 @@ function Library:CreateWindow(config)
             for _, otherTab in pairs(Window.Tabs) do
                 otherTab.Container.Visible = false
                 otherTab.Button.BackgroundTransparency = 1
-                otherTab.Button.TextColor3 = Color3.fromRGB(145, 165, 195)
+                otherTab.Button.TextColor3 = Color3.fromRGB(130, 155, 190)
                 local ind = otherTab.Button:FindFirstChild("Indicator")
                 if ind then ind.Visible = false end
+                local st = otherTab.Button:FindFirstChildOfClass("UIStroke")
+                if st then st.Transparency = 1 end
                 otherTab.Active = false
             end
             container.Visible = true
-            tabButton.BackgroundTransparency = 0.55
+            tabButton.BackgroundTransparency = 0.35
             tabButton.TextColor3 = Library.FontColor
             indicator.Visible = true
+            if tabStroke then tabStroke.Transparency = 0.55 end
             Tab.Active = true
             Window.CurrentTab = Tab
         end
@@ -773,14 +797,14 @@ function Library:CreateWindow(config)
         tabButton.MouseButton1Click:Connect(ActivateTab)
         tabButton.MouseEnter:Connect(function()
             if not Tab.Active then
-                TweenService:Create(tabButton, TweenInfo.new(0.12), {
-                    BackgroundTransparency = 0.78
+                TweenService:Create(tabButton, TweenInfo.new(0.15), {
+                    BackgroundTransparency = 0.7
                 }):Play()
             end
         end)
         tabButton.MouseLeave:Connect(function()
             if not Tab.Active then
-                TweenService:Create(tabButton, TweenInfo.new(0.12), {
+                TweenService:Create(tabButton, TweenInfo.new(0.15), {
                     BackgroundTransparency = 1
                 }):Play()
             end
@@ -810,32 +834,62 @@ function Library:CreateWindow(config)
             local box = Create("Frame", {
                 Name = titleText,
                 BackgroundColor3 = Library.MainColor,
-                BackgroundTransparency = 0.15,
+                BackgroundTransparency = 0.08,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 50),
                 ZIndex = 10,
                 Parent = container,
             })
-            Round(box, 10)
-            Stroke(box, Library.OutlineColor, 1, 0.48)
+            Round(box, 11)
+            Stroke(box, Library.OutlineColor, 1.2, 0.40)
             Library:AddToRegistry(box, { BackgroundColor3 = "MainColor" })
 
-            local boxTitle = Create("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, -24, 0, 28),
-                Position = UDim2.fromOffset(14, 6),
-                Font = Enum.Font.GothamBold,
-                Text = titleText,
-                TextSize = 13,
-                TextColor3 = Library.AccentColor,
-                TextXAlignment = Enum.TextXAlignment.Left,
+            -- Title bar strip inside groupbox
+            local titleBar = Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(12, 16, 26),
+                BackgroundTransparency = 0.25,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, 30),
                 ZIndex = 11,
                 Parent = box,
             })
-            Library:AddToRegistry(boxTitle, { TextColor3 = "AccentColor" })
+            Round(titleBar, 11)
+            Create("Frame", {
+                BackgroundColor3 = Color3.fromRGB(12, 16, 26),
+                BackgroundTransparency = 0.25,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, 12),
+                Position = UDim2.new(0, 0, 1, -12),
+                ZIndex = 11,
+                Parent = titleBar,
+            })
+            -- Accent bar on left of title
+            local titleAccent = Create("Frame", {
+                BackgroundColor3 = Library.AccentColor,
+                BorderSizePixel = 0,
+                Size = UDim2.new(0, 3, 0, 14),
+                Position = UDim2.fromOffset(12, 8),
+                ZIndex = 12,
+                Parent = titleBar,
+            })
+            Round(titleAccent, 2)
+            Library:AddToRegistry(titleAccent, { BackgroundColor3 = "AccentColor" })
 
-            local boxList = ListLayout(box, 8)
-            Padding(box, 34, 12, 14, 14)
+            local boxTitle = Create("TextLabel", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -36, 0, 30),
+                Position = UDim2.fromOffset(22, 0),
+                Font = Enum.Font.GothamBold,
+                Text = titleText,
+                TextSize = 13,
+                TextColor3 = Library.GroupTitleColor or Library.AccentColor,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 12,
+                Parent = box,
+            })
+
+            local boxList = ListLayout(box, 9)
+            Padding(box, 38, 14, 16, 16)
 
             local function ResizeBox()
                 box.Size = UDim2.new(1, 0, 0, boxList.AbsoluteContentSize.Y + 46)
@@ -874,22 +928,24 @@ function Library:CreateWindow(config)
                 local track = Create("Frame", {
                     BackgroundColor3 = Library.ToggleOffColor,
                     BorderSizePixel = 0,
-                    Size = UDim2.fromOffset(40, 22),
-                    Position = UDim2.new(1, -40, 0.5, -11),
+                    Size = UDim2.fromOffset(44, 24),
+                    Position = UDim2.new(1, -44, 0.5, -12),
                     ZIndex = 12,
                     Parent = holder,
                 })
-                Round(track, 11)
+                Round(track, 12)
+                Stroke(track, Library.OutlineColor, 1, 0.55)
 
                 local knob = Create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(245, 250, 255),
+                    BackgroundColor3 = Color3.fromRGB(250, 252, 255),
                     BorderSizePixel = 0,
                     Size = UDim2.fromOffset(18, 18),
-                    Position = UDim2.fromOffset(2, 2),
+                    Position = UDim2.fromOffset(3, 3),
                     ZIndex = 13,
                     Parent = track,
                 })
                 Round(knob, 9)
+                Stroke(knob, Color3.fromRGB(180, 220, 255), 1, 0.7)
 
                 local state = default
 
@@ -902,12 +958,12 @@ function Library:CreateWindow(config)
                 local function SetValue(value, noCallback)
                     state = value and true or false
                     ToggleObject.Value = state
-                    local targetPos = state and UDim2.fromOffset(20, 2) or UDim2.fromOffset(2, 2)
+                    local targetPos = state and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
                     local targetColor = state and Library.ToggleOnColor or Library.ToggleOffColor
-                    TweenService:Create(knob, TweenInfo.new(0.18, Enum.EasingStyle.Quint), {
+                    TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
                         Position = targetPos
                     }):Play()
-                    TweenService:Create(track, TweenInfo.new(0.18, Enum.EasingStyle.Quint), {
+                    TweenService:Create(track, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
                         BackgroundColor3 = targetColor
                     }):Play()
                     if not noCallback and callback then
@@ -981,14 +1037,15 @@ function Library:CreateWindow(config)
                 })
 
                 local barBackground = Create("Frame", {
-                    BackgroundColor3 = Library.BackgroundColor,
+                    BackgroundColor3 = Color3.fromRGB(12, 16, 26),
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 8),
+                    Size = UDim2.new(1, 0, 0, 10),
                     Position = UDim2.fromOffset(0, 28),
                     ZIndex = 12,
                     Parent = holder,
                 })
-                Round(barBackground, 4)
+                Round(barBackground, 5)
+                Stroke(barBackground, Library.OutlineColor, 1, 0.6)
 
                 local fill = Create("Frame", {
                     BackgroundColor3 = Library.AccentColor,
@@ -997,8 +1054,14 @@ function Library:CreateWindow(config)
                     ZIndex = 13,
                     Parent = barBackground,
                 })
-                Round(fill, 4)
+                Round(fill, 5)
                 Library:AddToRegistry(fill, { BackgroundColor3 = "AccentColor" })
+                local fillGrad = Instance.new("UIGradient")
+                fillGrad.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 160, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 230, 255)),
+                })
+                fillGrad.Parent = fill
 
                 local SliderObject = {
                     Type = "Slider",
