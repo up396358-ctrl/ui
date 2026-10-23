@@ -478,7 +478,7 @@ function Library:CreateWindow(config)
     local Outer = Create("Frame", {
         Name = "Outer",
         BackgroundColor3 = Library.BackgroundColor,
-        BackgroundTransparency = 0.92,
+        BackgroundTransparency = 0.97,
         BorderSizePixel = 0,
         Size = size,
         Position = UDim2.fromScale(0.5, 0.5),
@@ -489,18 +489,18 @@ function Library:CreateWindow(config)
         ClipsDescendants = true,
     })
     Round(Outer, 14)
-    local outerStroke = Stroke(Outer, Library.AccentColor, 1.4, 0.40)
+    local outerStroke = Stroke(Outer, Library.AccentColor, 1.2, 0.50)
     -- Soft outer glow ring
     local glow = Create("Frame", {
         Name = "Glow",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, 12, 1, 12),
-        Position = UDim2.fromOffset(-6, -6),
+        Size = UDim2.new(1, 14, 1, 14),
+        Position = UDim2.fromOffset(-7, -7),
         ZIndex = 0,
         Parent = Outer,
     })
     Round(glow, 18)
-    local glowStroke = Stroke(glow, Library.AccentColor, 4, 0.88)
+    Stroke(glow, Library.AccentColor, 3, 0.90)
     Window.Holder = Outer
     Library:AddToRegistry(Outer, { BackgroundColor3 = "BackgroundColor" })
     Library:AddToRegistry(outerStroke, { Color = "AccentColor" })
@@ -518,11 +518,11 @@ function Library:CreateWindow(config)
     Round(BgImage, 12)
     Window.BackgroundImageLabel = BgImage
 
-    -- Light overlay so background texture shows through clearly
+    -- Minimal overlay — background texture fully visible
     local BgOverlay = Create("Frame", {
         Name = "BackgroundOverlay",
         BackgroundColor3 = Library.BackgroundColor,
-        BackgroundTransparency = 0.92,
+        BackgroundTransparency = 0.97,
         BorderSizePixel = 0,
         Size = UDim2.fromScale(1, 1),
         ZIndex = 2,
@@ -550,26 +550,17 @@ function Library:CreateWindow(config)
         Window:SetBackgroundImage(backgroundImage, backgroundTransparency)
     end
 
-    -- Top bar (nearly fully transparent)
+    -- Top bar (clean, no inner cover strips)
     local TopBar = Create("Frame", {
         Name = "TopBar",
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.85,
+        BackgroundTransparency = 0.90,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 44),
         Parent = Outer,
         ZIndex = 10,
     })
     Round(TopBar, 14)
-    Create("Frame", {
-        BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.85,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 18),
-        Position = UDim2.new(0, 0, 1, -18),
-        Parent = TopBar,
-        ZIndex = 10,
-    })
     Library:AddToRegistry(TopBar, { BackgroundColor3 = "MainColor" })
 
     local TitleLabel = Create("TextLabel", {
@@ -652,11 +643,11 @@ function Library:CreateWindow(config)
         Outer.Visible = true
     end
 
-    -- Sidebar (nearly fully transparent)
+    -- Sidebar (fully transparent — no gray panel)
     local Sidebar = Create("Frame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
-        BackgroundTransparency = 0.88,
+        BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Size = UDim2.new(0, 158, 1, -44),
         Position = UDim2.fromOffset(0, 44),
@@ -789,9 +780,9 @@ function Library:CreateWindow(config)
                 otherTab.Active = false
             end
             container.Visible = true
-            tabButton.BackgroundTransparency = 0.45
+            tabButton.BackgroundTransparency = 0.60
             tabButton.TextColor3 = Library.FontColor
-            if tabStroke then tabStroke.Transparency = 0.55 end
+            if tabStroke then tabStroke.Transparency = 0.50 end
             Tab.Active = true
             Window.CurrentTab = Tab
         end
@@ -836,40 +827,21 @@ function Library:CreateWindow(config)
             local box = Create("Frame", {
                 Name = titleText,
                 BackgroundColor3 = Library.MainColor,
-                BackgroundTransparency = 0.88,
+                BackgroundTransparency = 0.92,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 50),
                 ZIndex = 10,
                 Parent = container,
             })
-            Round(box, 11)
-            Stroke(box, Library.OutlineColor, 1.2, 0.55)
+            Round(box, 12)
+            -- Soft outer stroke only (no inner black bars)
+            Stroke(box, Library.AccentColor, 1, 0.72)
             Library:AddToRegistry(box, { BackgroundColor3 = "MainColor" })
-
-            -- Title bar strip
-            local titleBar = Create("Frame", {
-                BackgroundColor3 = Color3.fromRGB(12, 16, 26),
-                BackgroundTransparency = 0.90,
-                BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, 30),
-                ZIndex = 11,
-                Parent = box,
-            })
-            Round(titleBar, 11)
-            Create("Frame", {
-                BackgroundColor3 = Color3.fromRGB(12, 16, 26),
-                BackgroundTransparency = 0.90,
-                BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, 12),
-                Position = UDim2.new(0, 0, 1, -12),
-                ZIndex = 11,
-                Parent = titleBar,
-            })
 
             local boxTitle = Create("TextLabel", {
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, -28, 0, 30),
-                Position = UDim2.fromOffset(14, 0),
+                Size = UDim2.new(1, -24, 0, 22),
+                Position = UDim2.fromOffset(14, 8),
                 Font = Enum.Font.GothamBold,
                 Text = titleText,
                 TextSize = 13,
@@ -879,8 +851,8 @@ function Library:CreateWindow(config)
                 Parent = box,
             })
 
-            local boxList = ListLayout(box, 9)
-            Padding(box, 38, 14, 16, 16)
+            local boxList = ListLayout(box, 10)
+            Padding(box, 34, 14, 16, 16)
 
             local function ResizeBox()
                 box.Size = UDim2.new(1, 0, 0, boxList.AbsoluteContentSize.Y + 46)
@@ -1118,9 +1090,10 @@ function Library:CreateWindow(config)
                 local doubleClick = info.DoubleClick or false
 
                 local button = Create("TextButton", {
-                    BackgroundColor3 = Library.BackgroundColor,
+                    BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+                    BackgroundTransparency = 0.55,
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 32),
+                    Size = UDim2.new(1, 0, 0, 34),
                     Font = Enum.Font.GothamMedium,
                     Text = text,
                     TextSize = 13,
@@ -1129,9 +1102,8 @@ function Library:CreateWindow(config)
                     ZIndex = 11,
                     Parent = box,
                 })
-                Round(button, 8)
-                Stroke(button, Library.OutlineColor, 1, 0.45)
-                Library:AddToRegistry(button, { BackgroundColor3 = "BackgroundColor", TextColor3 = "FontColor" })
+                Round(button, 9)
+                local btnStroke = Stroke(button, Library.AccentColor, 1, 0.65)
 
                 local lastClick = 0
                 button.MouseButton1Click:Connect(function()
@@ -1148,13 +1120,19 @@ function Library:CreateWindow(config)
                     end
                 end)
                 button.MouseEnter:Connect(function()
-                    TweenService:Create(button, TweenInfo.new(0.12), {
-                        BackgroundColor3 = Library.MainColor
+                    TweenService:Create(button, TweenInfo.new(0.15), {
+                        BackgroundTransparency = 0.30
+                    }):Play()
+                    TweenService:Create(btnStroke, TweenInfo.new(0.15), {
+                        Transparency = 0.35
                     }):Play()
                 end)
                 button.MouseLeave:Connect(function()
-                    TweenService:Create(button, TweenInfo.new(0.12), {
-                        BackgroundColor3 = Library.BackgroundColor
+                    TweenService:Create(button, TweenInfo.new(0.15), {
+                        BackgroundTransparency = 0.55
+                    }):Play()
+                    TweenService:Create(btnStroke, TweenInfo.new(0.15), {
+                        Transparency = 0.65
                     }):Play()
                 end)
 
