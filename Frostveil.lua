@@ -474,10 +474,11 @@ function Library:CreateWindow(config)
         Title = title,
     }
 
-    -- Outer container
+    -- Outer container (transparent so background texture shows)
     local Outer = Create("Frame", {
         Name = "Outer",
         BackgroundColor3 = Library.BackgroundColor,
+        BackgroundTransparency = 0.35,
         BorderSizePixel = 0,
         Size = size,
         Position = UDim2.fromScale(0.5, 0.5),
@@ -517,11 +518,11 @@ function Library:CreateWindow(config)
     Round(BgImage, 12)
     Window.BackgroundImageLabel = BgImage
 
-    -- Dark overlay for readability over textures
+    -- Light overlay so background texture shows through clearly
     local BgOverlay = Create("Frame", {
         Name = "BackgroundOverlay",
         BackgroundColor3 = Library.BackgroundColor,
-        BackgroundTransparency = 0.20,
+        BackgroundTransparency = 0.55,
         BorderSizePixel = 0,
         Size = UDim2.fromScale(1, 1),
         ZIndex = 2,
@@ -549,11 +550,11 @@ function Library:CreateWindow(config)
         Window:SetBackgroundImage(backgroundImage, backgroundTransparency)
     end
 
-    -- Top bar (premium glass strip)
+    -- Top bar (glass strip — lets background show)
     local TopBar = Create("Frame", {
         Name = "TopBar",
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.02,
+        BackgroundTransparency = 0.35,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 44),
         Parent = Outer,
@@ -562,7 +563,7 @@ function Library:CreateWindow(config)
     Round(TopBar, 14)
     Create("Frame", {
         BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.02,
+        BackgroundTransparency = 0.35,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 18),
         Position = UDim2.new(0, 0, 1, -18),
@@ -684,11 +685,11 @@ function Library:CreateWindow(config)
         if isMinimized then MinButton.MouseButton1Click:Fire() end
     end
 
-    -- Sidebar
+    -- Sidebar (transparent glass)
     local Sidebar = Create("Frame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
-        BackgroundTransparency = 0.0,
+        BackgroundTransparency = 0.40,
         BorderSizePixel = 0,
         Size = UDim2.new(0, 158, 1, -44),
         Position = UDim2.fromOffset(0, 44),
@@ -793,22 +794,8 @@ function Library:CreateWindow(config)
             Parent = Sidebar,
         })
         Round(tabButton, 9)
-        -- Extra left padding so text never sits under the indicator bar
-        Padding(tabButton, 0, 0, 22, 8)
+        Padding(tabButton, 0, 0, 14, 8)
         local tabStroke = Stroke(tabButton, Library.OutlineColor, 1, 1)
-
-        local indicator = Create("Frame", {
-            Name = "Indicator",
-            BackgroundColor3 = Library.AccentColor,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0, 3, 0.45, 0),
-            Position = UDim2.new(0, 6, 0.275, 0),
-            Visible = false,
-            ZIndex = 11,
-            Parent = tabButton,
-        })
-        Round(indicator, 2)
-        Library:AddToRegistry(indicator, { BackgroundColor3 = "AccentColor" })
 
         Tab.Button = tabButton
 
@@ -840,16 +827,13 @@ function Library:CreateWindow(config)
                 otherTab.Container.Visible = false
                 otherTab.Button.BackgroundTransparency = 1
                 otherTab.Button.TextColor3 = Color3.fromRGB(130, 155, 190)
-                local ind = otherTab.Button:FindFirstChild("Indicator")
-                if ind then ind.Visible = false end
                 local st = otherTab.Button:FindFirstChildOfClass("UIStroke")
                 if st then st.Transparency = 1 end
                 otherTab.Active = false
             end
             container.Visible = true
-            tabButton.BackgroundTransparency = 0.35
+            tabButton.BackgroundTransparency = 0.45
             tabButton.TextColor3 = Library.FontColor
-            indicator.Visible = true
             if tabStroke then tabStroke.Transparency = 0.55 end
             Tab.Active = true
             Window.CurrentTab = Tab
@@ -895,20 +879,20 @@ function Library:CreateWindow(config)
             local box = Create("Frame", {
                 Name = titleText,
                 BackgroundColor3 = Library.MainColor,
-                BackgroundTransparency = 0.08,
+                BackgroundTransparency = 0.45,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 50),
                 ZIndex = 10,
                 Parent = container,
             })
             Round(box, 11)
-            Stroke(box, Library.OutlineColor, 1.2, 0.40)
+            Stroke(box, Library.OutlineColor, 1.2, 0.50)
             Library:AddToRegistry(box, { BackgroundColor3 = "MainColor" })
 
-            -- Title bar strip inside groupbox
+            -- Title bar strip (no thick accent line)
             local titleBar = Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(12, 16, 26),
-                BackgroundTransparency = 0.25,
+                BackgroundTransparency = 0.55,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 30),
                 ZIndex = 11,
@@ -917,29 +901,18 @@ function Library:CreateWindow(config)
             Round(titleBar, 11)
             Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(12, 16, 26),
-                BackgroundTransparency = 0.25,
+                BackgroundTransparency = 0.55,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 12),
                 Position = UDim2.new(0, 0, 1, -12),
                 ZIndex = 11,
                 Parent = titleBar,
             })
-            -- Accent bar on left of title
-            local titleAccent = Create("Frame", {
-                BackgroundColor3 = Library.AccentColor,
-                BorderSizePixel = 0,
-                Size = UDim2.new(0, 3, 0, 14),
-                Position = UDim2.fromOffset(12, 8),
-                ZIndex = 12,
-                Parent = titleBar,
-            })
-            Round(titleAccent, 2)
-            Library:AddToRegistry(titleAccent, { BackgroundColor3 = "AccentColor" })
 
             local boxTitle = Create("TextLabel", {
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, -36, 0, 30),
-                Position = UDim2.fromOffset(22, 0),
+                Size = UDim2.new(1, -28, 0, 30),
+                Position = UDim2.fromOffset(14, 0),
                 Font = Enum.Font.GothamBold,
                 Text = titleText,
                 TextSize = 13,
@@ -1715,65 +1688,6 @@ end
 function ThemeManager:ApplyToTab(tab)
     if not tab then return end
 
-    local group = tab:AddLeftGroupbox("Themes")
-    local names = {}
-    for name in pairs(self.Themes) do
-        table.insert(names, name)
-    end
-    table.sort(names)
-    group:AddDropdown("ThemeSelector", {
-        Text = "Theme Preset",
-        Values = names,
-        Default = "Default",
-        Callback = function(value)
-            self:ApplyTheme(value)
-        end,
-    })
-
-    local colors = tab:AddLeftGroupbox("UI Colors")
-    local colorKeys = {
-        { "AccentColor", "Accent" },
-        { "FontColor", "Text Color" },
-        { "OutlineColor", "Outline" },
-        { "BackgroundColor", "Background" },
-        { "MainColor", "Main Panel" },
-        { "SidebarColor", "Sidebar" },
-        { "ToggleOnColor", "Toggle On" },
-        { "RiskColor", "Risk Text" },
-    }
-    for _, entry in ipairs(colorKeys) do
-        local key, label = entry[1], entry[2]
-        colors:AddButton({
-            Text = "Cycle " .. label,
-            Func = function()
-                local presets = {
-                    Color3.fromRGB(100, 210, 255),
-                    Color3.fromRGB(255, 95, 125),
-                    Color3.fromRGB(80, 220, 150),
-                    Color3.fromRGB(255, 190, 70),
-                    Color3.fromRGB(180, 130, 255),
-                    Color3.fromRGB(240, 245, 255),
-                    Color3.fromRGB(40, 50, 70),
-                    Color3.fromRGB(12, 14, 22),
-                }
-                local current = self.Library[key]
-                local idx = 1
-                for i, c in ipairs(presets) do
-                    if current and math.abs(c.R - current.R) < 0.02
-                        and math.abs(c.G - current.G) < 0.02
-                        and math.abs(c.B - current.B) < 0.02 then
-                        idx = i
-                        break
-                    end
-                end
-                local nextColor = presets[(idx % #presets) + 1]
-                self.Library[key] = nextColor
-                self.Library:UpdateColorsUsingRegistry()
-                Library:Notify(label .. " updated", 1.5)
-            end,
-        })
-    end
-
     local controls = tab:AddLeftGroupbox("Menu Controls")
     controls:AddLabel("Toggle key: " .. tostring(Library.ToggleKeybind or "RightShift"))
     local keyOptions = {
@@ -1805,7 +1719,8 @@ function ThemeManager:ApplyToTab(tab)
         Func = function()
             for _, win in ipairs(Library.Windows or {}) do
                 if win.SetBackgroundImage then
-                    win:SetBackgroundImage("125296886011244", 0.45)
+                    -- User texture id
+                    win:SetBackgroundImage("125296886011244", 0.25)
                 end
             end
             Library:Notify("Background texture applied", 2)
