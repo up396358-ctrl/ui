@@ -1,4 +1,3 @@
-
 --[[
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
@@ -574,6 +573,7 @@ function Library:CreateWindow(config)
         TextSize = 15,
         TextColor3 = Library.FontColor,
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
         ZIndex = 12,
         Parent = TopBar,
     })
@@ -737,13 +737,18 @@ function Library:CreateWindow(config)
             TextSize = 13,
             TextColor3 = Color3.fromRGB(130, 155, 190),
             TextXAlignment = Enum.TextXAlignment.Left,
+            TextScaled = true,
             AutoButtonColor = false,
             LayoutOrder = order,
             ZIndex = 10,
             Parent = Sidebar,
         })
         Round(tabButton, 9)
-        Padding(tabButton, 0, 0, 14, 8)
+        Padding(tabButton, 6, 6, 14, 8)
+        local tabLimit = Instance.new("UITextSizeConstraint")
+        tabLimit.MaxTextSize = 13
+        tabLimit.MinTextSize = 9
+        tabLimit.Parent = tabButton
         local tabStroke = Stroke(tabButton, Library.OutlineColor, 1, 1)
 
         Tab.Button = tabButton
@@ -888,9 +893,14 @@ function Library:CreateWindow(config)
                 TextSize = 13,
                 TextColor3 = Library.GroupTitleColor or Library.AccentColor,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                TextScaled = true,
                 ZIndex = 12,
                 Parent = box,
             })
+            local boxTitleLimit = Instance.new("UITextSizeConstraint")
+            boxTitleLimit.MaxTextSize = 13
+            boxTitleLimit.MinTextSize = 9
+            boxTitleLimit.Parent = boxTitle
 
             local boxList = ListLayout(box, 10)
             Padding(box, 34, 14, 16, 16)
@@ -917,7 +927,7 @@ function Library:CreateWindow(config)
                     Parent = box,
                 })
 
-                Create("TextLabel", {
+                local toggleLabel = Create("TextLabel", {
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, -54, 1, 0),
                     Font = Enum.Font.Gotham,
@@ -925,9 +935,14 @@ function Library:CreateWindow(config)
                     TextSize = 13,
                     TextColor3 = risky and Library.RiskColor or Library.FontColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
+                    TextScaled = true,
                     ZIndex = 12,
                     Parent = holder,
                 })
+                local tLimit = Instance.new("UITextSizeConstraint")
+                tLimit.MaxTextSize = 13
+                tLimit.MinTextSize = 8
+                tLimit.Parent = toggleLabel
 
                 local track = Create("Frame", {
                     BackgroundColor3 = Library.ToggleOffColor,
@@ -1015,7 +1030,7 @@ function Library:CreateWindow(config)
                     Parent = box,
                 })
 
-                Create("TextLabel", {
+                local sliderLabel = Create("TextLabel", {
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, -70, 0, 18),
                     Font = Enum.Font.Gotham,
@@ -1023,9 +1038,14 @@ function Library:CreateWindow(config)
                     TextSize = 13,
                     TextColor3 = Library.FontColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
+                    TextScaled = true,
                     ZIndex = 12,
                     Parent = holder,
                 })
+                local sLimit = Instance.new("UITextSizeConstraint")
+                sLimit.MaxTextSize = 13
+                sLimit.MinTextSize = 8
+                sLimit.Parent = sliderLabel
 
                 local valueLabel = Create("TextLabel", {
                     BackgroundTransparency = 1,
@@ -1036,9 +1056,14 @@ function Library:CreateWindow(config)
                     TextSize = 13,
                     TextColor3 = Library.FontColor,
                     TextXAlignment = Enum.TextXAlignment.Right,
+                    TextScaled = true,
                     ZIndex = 12,
                     Parent = holder,
                 })
+                local vLimit = Instance.new("UITextSizeConstraint")
+                vLimit.MaxTextSize = 13
+                vLimit.MinTextSize = 8
+                vLimit.Parent = valueLabel
 
                 local barBackground = Create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(12, 16, 26),
@@ -1139,11 +1164,18 @@ function Library:CreateWindow(config)
                     Text = text,
                     TextSize = 13,
                     TextColor3 = Library.FontColor,
+                    TextScaled = true,
+                    TextXAlignment = Enum.TextXAlignment.Center,
                     AutoButtonColor = false,
                     ZIndex = 11,
                     Parent = box,
                 })
                 Round(button, 9)
+                Padding(button, 4, 4, 10, 10)
+                local btnSizeLimit = Instance.new("UITextSizeConstraint")
+                btnSizeLimit.MaxTextSize = 13
+                btnSizeLimit.MinTextSize = 8
+                btnSizeLimit.Parent = button
                 local btnStroke = Stroke(button, Library.AccentColor, 1, 0.65)
 
                 local lastClick = 0
@@ -1384,10 +1416,14 @@ function Library:CreateWindow(config)
                     TextSize = 13,
                     TextColor3 = Library.FontColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    TextScaled = true,
                     ZIndex = 13,
                     Parent = dropButton,
                 })
+                local dLimit = Instance.new("UITextSizeConstraint")
+                dLimit.MaxTextSize = 13
+                dLimit.MinTextSize = 8
+                dLimit.Parent = displayLabel
 
                 Create("TextLabel", {
                     BackgroundTransparency = 1,
@@ -1482,10 +1518,15 @@ function Library:CreateWindow(config)
                             TextSize = 13,
                             TextColor3 = Library.FontColor,
                             TextXAlignment = Enum.TextXAlignment.Left,
+                            TextScaled = true,
                             AutoButtonColor = false,
                             ZIndex = 502,
                             Parent = listScroll,
                         })
+                        local oLimit = Instance.new("UITextSizeConstraint")
+                        oLimit.MaxTextSize = 13
+                        oLimit.MinTextSize = 8
+                        oLimit.Parent = optionBtn
                         Round(optionBtn, 5)
                         optionBtn.MouseButton1Click:Connect(function()
                             if multi then
