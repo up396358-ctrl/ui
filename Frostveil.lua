@@ -597,7 +597,7 @@ function Library:CreateWindow(config)
     })
     -- Minimize = fully hide UI (keybind shows it again)
     MinButton.MouseButton1Click:Connect(function()
-        Outer.Visible = false
+        Window:Hide()
     end)
     MinButton.MouseEnter:Connect(function()
         TweenService:Create(MinButton, TweenInfo.new(0.12), {
@@ -677,17 +677,43 @@ function Library:CreateWindow(config)
     -- Dragging
     Library:MakeDraggable(Outer, 42)
 
-    -- Toggle visibility
+    local windowScale = Instance.new("UIScale")
+    windowScale.Scale = 1
+    windowScale.Parent = Outer
+
+    local function animateShow()
+        Outer.Visible = true
+        windowScale.Scale = 0.94
+        TweenService:Create(windowScale, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Scale = 1
+        }):Play()
+    end
+
+    local function animateHide()
+        TweenService:Create(windowScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Scale = 0.96
+        }):Play()
+        task.delay(0.16, function()
+            Outer.Visible = false
+            windowScale.Scale = 1
+        end)
+    end
+
+    -- Toggle visibility with animation
     function Window:Toggle()
-        Outer.Visible = not Outer.Visible
+        if Outer.Visible then
+            animateHide()
+        else
+            animateShow()
+        end
     end
 
     function Window:Show()
-        Outer.Visible = true
+        animateShow()
     end
 
     function Window:Hide()
-        Outer.Visible = false
+        animateHide()
     end
 
     function Window:SetTitle(newTitle)
@@ -813,19 +839,61 @@ function Library:CreateWindow(config)
         Tab.LeftColumn = leftCol
         Tab.RightColumn = rightCol
 
+        -- Content fade helper
+        local contentScale = Instance.new("UIScale")
+        contentScale.Scale = 1
+        contentScale.Parent = container
+
         local function ActivateTab()
+            if Tab.Active then return end
             for _, otherTab in pairs(Window.Tabs) do
-                otherTab.Container.Visible = false
-                otherTab.Button.BackgroundTransparency = 1
-                otherTab.Button.TextColor3 = Color3.fromRGB(130, 155, 190)
-                local st = otherTab.Button:FindFirstChildOfClass("UIStroke")
-                if st then st.Transparency = 1 end
+                if otherTab.Active and otherTab.Container then
+                    local otherScale = otherTab.Container:FindFirstChildOfClass("UIScale")
+                    TweenService:Create(otherTab.Button, TweenInfo.new(0.18, Enum.EasingStyle.Quint), {
+                        BackgroundTransparency = 1,
+                        TextColor3 = Color3.fromRGB(130, 155, 190),
+                    }):Play()
+                    local st = otherTab.Button:FindFirstChildOfClass("UIStroke")
+                    if st then
+                        TweenService:Create(st, TweenInfo.new(0.18), { Transparency = 1 }):Play()
+                    end
+                    if otherScale then
+                        TweenService:Create(otherScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+                            Scale = 0.97
+                        }):Play()
+                    end
+                    task.delay(0.12, function()
+                        if not otherTab.Active then
+                            otherTab.Container.Visible = false
+                            if otherScale then otherScale.Scale = 1 end
+                        end
+                    end)
+                end
                 otherTab.Active = false
             end
+
             container.Visible = true
-            tabButton.BackgroundTransparency = 0.60
-            tabButton.TextColor3 = Library.FontColor
-            if tabStroke then tabStroke.Transparency = 0.50 end
+            contentScale.Scale = 0.96
+            -- Fade in content
+            for _, desc in ipairs(container:GetDescendants()) do
+                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                    local old = desc.TextTransparency
+                    desc.TextTransparency = 0.5
+                    TweenService:Create(desc, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {
+                        TextTransparency = old
+                    }):Play()
+                end
+            end
+            TweenService:Create(contentScale, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                Scale = 1
+            }):Play()
+            TweenService:Create(tabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
+                BackgroundTransparency = 0.55,
+                TextColor3 = Library.FontColor,
+            }):Play()
+            if tabStroke then
+                TweenService:Create(tabStroke, TweenInfo.new(0.2), { Transparency = 0.45 }):Play()
+            end
             Tab.Active = true
             Window.CurrentTab = Tab
         end
@@ -833,14 +901,14 @@ function Library:CreateWindow(config)
         tabButton.MouseButton1Click:Connect(ActivateTab)
         tabButton.MouseEnter:Connect(function()
             if not Tab.Active then
-                TweenService:Create(tabButton, TweenInfo.new(0.15), {
-                    BackgroundTransparency = 0.7
+                TweenService:Create(tabButton, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+                    BackgroundTransparency = 0.72
                 }):Play()
             end
         end)
         tabButton.MouseLeave:Connect(function()
             if not Tab.Active then
-                TweenService:Create(tabButton, TweenInfo.new(0.15), {
+                TweenService:Create(tabButton, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
                     BackgroundTransparency = 1
                 }):Play()
             end
@@ -979,11 +1047,18 @@ function Library:CreateWindow(config)
                     ToggleObject.Value = state
                     local targetPos = state and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
                     local targetColor = state and Library.ToggleOnColor or Library.ToggleOffColor
-                    TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
-                        Position = targetPos
-                    }):Play()
-                    TweenService:Create(track, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
-                        BackgroundColor3 = targetColor
+                    local info = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    TweenService:Create(knob, info, { Position = targetPos }):Play()
+                    TweenService:Create(track, info, { BackgroundColor3 = targetColor }):Play()
+                    -- Micro bounce on knob
+                    local scale = knob:FindFirstChildOfClass("UIScale")
+                    if not scale then
+                        scale = Instance.new("UIScale")
+                        scale.Parent = knob
+                    end
+                    scale.Scale = 0.85
+                    TweenService:Create(scale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                        Scale = 1
                     }):Play()
                     if not noCallback and callback then
                         Library:SafeCallback(callback, state)
@@ -1123,8 +1198,9 @@ function Library:CreateWindow(config)
                     end
                     SliderObject.Value = value
                     local percent = math.clamp((value - min) / (max - min), 0, 1)
-                    fill.Size = UDim2.new(percent, 0, 1, 0)
-                    knob.Position = UDim2.new(percent, 0, 0.5, 0)
+                    local tweenInfo = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                    TweenService:Create(fill, tweenInfo, { Size = UDim2.new(percent, 0, 1, 0) }):Play()
+                    TweenService:Create(knob, tweenInfo, { Position = UDim2.new(percent, 0, 0.5, 0) }):Play()
                     valueLabel.Text = tostring(value) .. suffix
                     if not noCallback and callback then
                         Library:SafeCallback(callback, value)
@@ -1202,8 +1278,17 @@ function Library:CreateWindow(config)
                 btnSizeLimit.Parent = button
                 local btnStroke = Stroke(button, Library.AccentColor, 1, 0.65)
 
+                local btnScale = Instance.new("UIScale")
+                btnScale.Scale = 1
+                btnScale.Parent = button
+
                 local lastClick = 0
                 button.MouseButton1Click:Connect(function()
+                    -- Press pulse
+                    btnScale.Scale = 0.96
+                    TweenService:Create(btnScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                        Scale = 1
+                    }):Play()
                     if doubleClick then
                         local now = tick()
                         if now - lastClick < 0.35 then
@@ -1564,6 +1649,8 @@ function Library:CreateWindow(config)
                             else
                                 table.clear(selected)
                                 selected[value] = true
+                                -- animated close
+                                TweenService:Create(arrow, TweenInfo.new(0.15), { Rotation = 0 }):Play()
                                 listFrame.Visible = false
                             end
                             if multi then
@@ -1589,11 +1676,49 @@ function Library:CreateWindow(config)
                     positionList()
                 end
 
+                local listScale = Instance.new("UIScale")
+                listScale.Scale = 1
+                listScale.Parent = listFrame
+
+                local function openDropdown()
+                    BuildList()
+                    positionList()
+                    listFrame.Visible = true
+                    listScale.Scale = 0.92
+                    listFrame.BackgroundTransparency = 0.6
+                    TweenService:Create(listScale, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                        Scale = 1
+                    }):Play()
+                    TweenService:Create(listFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                        BackgroundTransparency = 0.15
+                    }):Play()
+                    TweenService:Create(arrow, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                        Rotation = 180
+                    }):Play()
+                end
+
+                local function closeDropdown()
+                    TweenService:Create(listScale, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {
+                        Scale = 0.94
+                    }):Play()
+                    TweenService:Create(listFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {
+                        BackgroundTransparency = 0.6
+                    }):Play()
+                    TweenService:Create(arrow, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+                        Rotation = 0
+                    }):Play()
+                    task.delay(0.12, function()
+                        listFrame.Visible = false
+                        listScale.Scale = 1
+                        listFrame.BackgroundTransparency = 0.15
+                    end)
+                end
+
                 dropButton.MouseButton1Click:Connect(function()
-                    listFrame.Visible = not listFrame.Visible
                     if listFrame.Visible then
-                        BuildList()
-                        positionList()
+                        closeDropdown()
+                    else
+                        openDropdown()
                     end
                 end)
 
@@ -1671,7 +1796,7 @@ function Library:CreateWindow(config)
 
     if autoShow then
         task.defer(function()
-            Outer.Visible = true
+            Window:Show()
         end)
     end
 
