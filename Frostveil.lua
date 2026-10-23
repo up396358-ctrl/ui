@@ -1449,14 +1449,17 @@ function Library:CreateWindow(config)
                 dLimit.MinTextSize = 8
                 dLimit.Parent = displayLabel
 
-                Create("TextLabel", {
+                -- Down arrow indicator (clear dropdown affordance)
+                local arrow = Create("TextLabel", {
                     BackgroundTransparency = 1,
-                    Size = UDim2.fromOffset(20, 20),
-                    Position = UDim2.new(1, -24, 0.5, -10),
+                    Size = UDim2.fromOffset(22, 22),
+                    Position = UDim2.new(1, -26, 0.5, -11),
                     Font = Enum.Font.GothamBold,
-                    Text = "▾",
-                    TextSize = 12,
-                    TextColor3 = Color3.fromRGB(150, 170, 200),
+                    Text = "▼",
+                    TextSize = 11,
+                    TextColor3 = Color3.fromRGB(160, 200, 240),
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextYAlignment = Enum.TextYAlignment.Center,
                     ZIndex = 13,
                     Parent = dropButton,
                 })
