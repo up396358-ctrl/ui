@@ -485,6 +485,167 @@ local function CreateCrossRainSystem(parent, config)
     }
 end
 
+-- Chrome hearts effect
+local function CreateChromeHeartsSystem(parent, config)
+    config = config or {}
+    local count = config.HeartCount or 55
+    local enabled = false
+    local rng = Random.new()
+    local elapsed = 0
+
+    local container = Create("Frame", {
+        Name = "ChromeHeartsContainer",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        ClipsDescendants = true,
+        ZIndex = 78,
+        Visible = false,
+        Parent = parent,
+    })
+
+    local hearts = {}
+    for i = 1, count do
+        local size = rng:NextNumber(12, 32)
+        local heart = Create("TextLabel", {
+            Name = "ChromeHeart",
+            BackgroundTransparency = 1,
+            Size = UDim2.fromOffset(size, size),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Text = "♥",
+            TextScaled = true,
+            Font = Enum.Font.GothamBlack,
+            TextColor3 = Color3.fromRGB(220, 225, 235),
+            TextTransparency = rng:NextNumber(0.05, 0.3),
+            Rotation = rng:NextNumber(-25, 25),
+            ZIndex = 79,
+            Parent = container,
+        })
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(75, 82, 98)),
+            ColorSequenceKeypoint.new(0.22, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.42, Color3.fromRGB(135, 145, 165)),
+            ColorSequenceKeypoint.new(0.58, Color3.fromRGB(250, 250, 255)),
+            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(105, 115, 132)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 235, 245)),
+        })
+        gradient.Rotation = 90
+        gradient.Parent = heart
+        hearts[i] = {
+            gui = heart,
+            size = size,
+            x = rng:NextNumber(0, 1),
+            y = rng:NextNumber(-0.2, 1),
+            speed = rng:NextNumber(0.12, 0.35),
+            drift = rng:NextNumber(-0.08, 0.08),
+            spin = rng:NextNumber(-40, 40),
+            phase = rng:NextNumber(0, math.pi * 2),
+            sway = rng:NextNumber(0.01, 0.04),
+        }
+        heart.Position = UDim2.new(hearts[i].x, 0, hearts[i].y, 0)
+    end
+
+    local connection = RenderStepped:Connect(function(dt)
+        if not enabled or not container.Parent then return end
+        dt = math.min(dt, 1 / 30)
+        elapsed = elapsed + dt
+        for _, heart in ipairs(hearts) do
+            local sway = math.sin(elapsed * 1.2 + heart.phase) * heart.sway
+            heart.x = heart.x + heart.drift * dt
+            heart.y = heart.y + heart.speed * dt
+            heart.gui.Position = UDim2.new(heart.x + sway, 0, heart.y, 0)
+            heart.gui.Rotation = heart.gui.Rotation + heart.spin * dt
+            if heart.y > 1.2 or heart.x > 1.15 or heart.x < -0.15 then
+                heart.y = -0.1
+                heart.x = rng:NextNumber(0, 1)
+                heart.speed = rng:NextNumber(0.12, 0.35)
+            end
+        end
+    end)
+    Library:GiveSignal(connection)
+
+    return {
+        Container = container,
+        SetEnabled = function(_, state)
+            enabled = state and true or false
+            container.Visible = enabled
+        end,
+        IsEnabled = function() return enabled end,
+        Destroy = function()
+            pcall(function() connection:Disconnect() end)
+            container:Destroy()
+        end,
+    }
+end
+
+-- Rain effect (falling streaks)
+local function CreateRainSystem(parent, config)
+    config = config or {}
+    local count = config.DropCount or 60
+    local enabled = false
+    local rng = Random.new()
+
+    local container = Create("Frame", {
+        Name = "RainContainer",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        ClipsDescendants = true,
+        ZIndex = 77,
+        Visible = false,
+        Parent = parent,
+    })
+
+    local drops = {}
+    for i = 1, count do
+        local h = rng:NextNumber(10, 22)
+        local drop = Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(170, 200, 230),
+            BackgroundTransparency = rng:NextNumber(0.25, 0.55),
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(1.5, h),
+            AnchorPoint = Vector2.new(0.5, 0),
+            ZIndex = 78,
+            Parent = container,
+        })
+        Round(drop, 2)
+        drops[i] = {
+            gui = drop,
+            x = rng:NextNumber(0, 1),
+            y = rng:NextNumber(-0.3, 1),
+            speed = rng:NextNumber(0.55, 1.15),
+        }
+        drop.Position = UDim2.new(drops[i].x, 0, drops[i].y, 0)
+    end
+
+    local connection = RenderStepped:Connect(function(dt)
+        if not enabled or not container.Parent then return end
+        dt = math.min(dt, 1 / 30)
+        for _, drop in ipairs(drops) do
+            drop.y = drop.y + drop.speed * dt
+            if drop.y > 1.15 then
+                drop.y = -0.1
+                drop.x = rng:NextNumber(0, 1)
+                drop.speed = rng:NextNumber(0.55, 1.15)
+            end
+            drop.gui.Position = UDim2.new(drop.x, 0, drop.y, 0)
+        end
+    end)
+    Library:GiveSignal(connection)
+
+    return {
+        Container = container,
+        SetEnabled = function(_, state)
+            enabled = state and true or false
+            container.Visible = enabled
+        end,
+        IsEnabled = function() return enabled end,
+        Destroy = function()
+            pcall(function() connection:Disconnect() end)
+            container:Destroy()
+        end,
+    }
+end
+
 -- ══════════════════════════════════════════════════════════════════════════════
 -- DRAGGING
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -979,9 +1140,10 @@ function Library:CreateWindow(config)
         Parent = SettingsScroll,
     })
     local bgTextures = {
-        { Name = "None", Id = nil },
+        { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
+        { Name = "None", Id = nil },
     }
     local bgDrop = Create("TextButton", {
         BackgroundColor3 = Color3.fromRGB(20, 28, 42),
@@ -989,7 +1151,7 @@ function Library:CreateWindow(config)
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 30),
         Font = Enum.Font.GothamMedium,
-        Text = "  None  ▼",
+        Text = "  Original  ▼",
         TextSize = 12,
         TextColor3 = Color3.fromRGB(245, 245, 250),
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -1163,7 +1325,9 @@ function Library:CreateWindow(config)
     local function applyEffectState()
         local mode = Window.ActiveEffect or "Snow"
         if Window.Snow then Window.Snow:SetEnabled(effectOn and mode == "Snow") end
-        if Window.CrossRain then Window.CrossRain:SetEnabled(effectOn and mode == "Cross Rain") end
+        if Window.CrossRain then Window.CrossRain:SetEnabled(effectOn and mode == "Cross") end
+        if Window.ChromeHearts then Window.ChromeHearts:SetEnabled(effectOn and mode == "Hearts") end
+        if Window.Rain then Window.Rain:SetEnabled(effectOn and mode == "Rain") end
     end
 
     local eClick = Create("TextButton", {
@@ -1194,7 +1358,7 @@ function Library:CreateWindow(config)
         ZIndex = 202,
         Parent = SettingsScroll,
     })
-    local effectOptions = { "Snow", "Cross Rain", "None" }
+    local effectOptions = { "Snow", "Cross", "Hearts", "Rain", "None" }
     local effectDrop = Create("TextButton", {
         BackgroundColor3 = Color3.fromRGB(20, 28, 42),
         BackgroundTransparency = 0.35,
@@ -1431,7 +1595,9 @@ function Library:CreateWindow(config)
     -- Effects (snow + cross rain)
     Window.Snow = CreateSnowSystem(Outer, { MaxFlakes = 70 })
     Window.CrossRain = CreateCrossRainSystem(Outer, { CrossCount = 26 })
-    Window.ActiveEffect = "Snow" -- "Snow" | "Cross Rain" | "None"
+    Window.ChromeHearts = CreateChromeHeartsSystem(Outer, { HeartCount = 55 })
+    Window.Rain = CreateRainSystem(Outer, { DropCount = 60 })
+    Window.ActiveEffect = "Snow"
 
     -- Dragging
     Library:MakeDraggable(Outer, 42)
