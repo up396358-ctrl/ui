@@ -244,8 +244,10 @@ function Library:Notify(text, duration)
     duration = duration or 3
     local holder = GetNotificationHolder()
 
+    -- Fixed colors — never tied to theme registry (no glitch when recoloring UI)
     local notif = Create("Frame", {
-        BackgroundColor3 = Library.MainColor,
+        BackgroundColor3 = Color3.fromRGB(18, 20, 28),
+        BackgroundTransparency = 0.08,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -254,26 +256,17 @@ function Library:Notify(text, duration)
         ClipsDescendants = true,
     })
     Round(notif, 9)
-    Stroke(notif, Library.AccentColor, 1.2, 0.4)
-
-    local accentBar = Create("Frame", {
-        BackgroundColor3 = Library.AccentColor,
-        BorderSizePixel = 0,
-        Size = UDim2.new(0, 4, 1, 0),
-        Parent = notif,
-        ZIndex = 502,
-    })
-    Round(accentBar, 3)
+    Stroke(notif, Color3.fromRGB(55, 60, 75), 1, 0.35)
 
     local label = Create("TextLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -28, 0, 0),
-        Position = UDim2.fromOffset(18, 12),
+        Size = UDim2.new(1, -24, 0, 0),
+        Position = UDim2.fromOffset(12, 12),
         AutomaticSize = Enum.AutomaticSize.Y,
         Font = Enum.Font.Gotham,
         Text = tostring(text),
         TextSize = 13,
-        TextColor3 = Library.FontColor,
+        TextColor3 = Color3.fromRGB(245, 245, 250),
         TextWrapped = true,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 502,
@@ -287,10 +280,8 @@ function Library:Notify(text, duration)
                 BackgroundTransparency = 1
             })
             local fadeLabel = TweenService:Create(label, TweenInfo.new(0.35), { TextTransparency = 1 })
-            local fadeBar = TweenService:Create(accentBar, TweenInfo.new(0.35), { BackgroundTransparency = 1 })
             fade:Play()
             fadeLabel:Play()
-            fadeBar:Play()
             fade.Completed:Wait()
             notif:Destroy()
         end
@@ -768,42 +759,50 @@ function Library:CreateWindow(config)
         local current = Library[colorKey] or Color3.fromRGB(100, 210, 255)
         local h, s, v = Color3.toHSV(current)
 
-        -- Saturation / Value square
-        local svBox = Create("ImageButton", {
+        -- Saturation / Value square (Linoria-style layered gradients)
+        local svBox = Create("TextButton", {
             BackgroundColor3 = Color3.fromHSV(h, 1, 1),
             BorderSizePixel = 0,
             Size = UDim2.fromOffset(140, 110),
             Position = UDim2.fromOffset(0, 24),
-            Image = "rbxassetid://4155801252", -- blank white for gradient overlay
-            ImageTransparency = 1,
+            Text = "",
             AutoButtonColor = false,
             ZIndex = 203,
             Parent = row,
+            ClipsDescendants = true,
         })
         Round(svBox, 6)
-        -- White -> transparent horizontal (saturation)
-        local satGrad = Instance.new("UIGradient")
-        satGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-            ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1)),
-        })
-        satGrad.Parent = svBox
 
-        local valOverlay = Create("Frame", {
-            BackgroundColor3 = Color3.new(0, 0, 0),
+        -- White → transparent (left → right) for saturation
+        local whiteLayer = Create("Frame", {
+            BackgroundColor3 = Color3.new(1, 1, 1),
             BorderSizePixel = 0,
             Size = UDim2.fromScale(1, 1),
             ZIndex = 204,
             Parent = svBox,
         })
-        Round(valOverlay, 6)
-        local valGrad = Instance.new("UIGradient")
-        valGrad.Rotation = 90
-        valGrad.Transparency = NumberSequence.new({
+        local whiteGrad = Instance.new("UIGradient")
+        whiteGrad.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0),
+            NumberSequenceKeypoint.new(1, 1),
+        })
+        whiteGrad.Parent = whiteLayer
+
+        -- Transparent → black (top → bottom) for value
+        local blackLayer = Create("Frame", {
+            BackgroundColor3 = Color3.new(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.fromScale(1, 1),
+            ZIndex = 205,
+            Parent = svBox,
+        })
+        local blackGrad = Instance.new("UIGradient")
+        blackGrad.Rotation = 90
+        blackGrad.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 1),
             NumberSequenceKeypoint.new(1, 0),
         })
-        valGrad.Parent = valOverlay
+        blackGrad.Parent = blackLayer
 
         local svCursor = Create("Frame", {
             BackgroundColor3 = Color3.new(1, 1, 1),
@@ -811,7 +810,7 @@ function Library:CreateWindow(config)
             Size = UDim2.fromOffset(10, 10),
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.fromScale(s, 1 - v),
-            ZIndex = 205,
+            ZIndex = 206,
             Parent = svBox,
         })
         Round(svCursor, 5)
@@ -901,10 +900,6 @@ function Library:CreateWindow(config)
             end
             preview.BackgroundColor3 = c
             svBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-            satGrad.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-                ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1)),
-            })
             svCursor.Position = UDim2.fromScale(s, 1 - v)
             hueCursor.Position = UDim2.new(0, -2, h, -2)
             local r = math.floor(c.R * 255 + 0.5)
@@ -970,6 +965,91 @@ function Library:CreateWindow(config)
     addColorPickerRow("Accent", "AccentColor")
     addColorPickerRow("Background", "BackgroundColor")
     addColorPickerRow("Text", "FontColor")
+
+    -- Background texture dropdown
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.GothamBold,
+        Text = "Background Texture",
+        TextSize = 13,
+        TextColor3 = Library.AccentColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    local bgTextures = {
+        { Name = "None", Id = nil },
+        { Name = "Money", Id = "123207755204057" },
+        { Name = "SpongeBob", Id = "113644467007667" },
+    }
+    local bgDrop = Create("TextButton", {
+        BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+        BackgroundTransparency = 0.35,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 30),
+        Font = Enum.Font.GothamMedium,
+        Text = "  None  ▼",
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(245, 245, 250),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        AutoButtonColor = false,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    Round(bgDrop, 8)
+    Stroke(bgDrop, Color3.fromRGB(60, 80, 110), 1, 0.5)
+    local bgList = Create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(14, 18, 28),
+        BackgroundTransparency = 0.08,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 0),
+        Visible = false,
+        ZIndex = 310,
+        Parent = SettingsScroll,
+        ClipsDescendants = true,
+    })
+    Round(bgList, 8)
+    ListLayout(bgList, 2)
+    Padding(bgList, 4, 4, 4, 4)
+    for _, tex in ipairs(bgTextures) do
+        local opt = Create("TextButton", {
+            BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+            BackgroundTransparency = 0.25,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 26),
+            Font = Enum.Font.Gotham,
+            Text = "  " .. tex.Name,
+            TextSize = 12,
+            TextColor3 = Color3.fromRGB(245, 245, 250),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutoButtonColor = false,
+            ZIndex = 311,
+            Parent = bgList,
+        })
+        Round(opt, 5)
+        opt.MouseButton1Click:Connect(function()
+            bgDrop.Text = "  " .. tex.Name .. "  ▼"
+            bgList.Visible = false
+            bgList.Size = UDim2.new(1, 0, 0, 0)
+            if Window.SetBackgroundImage then
+                if tex.Id then
+                    Window:SetBackgroundImage(tex.Id, 0.12)
+                else
+                    Window:SetBackgroundImage(nil)
+                end
+            end
+            Library:Notify("Background: " .. tex.Name, 1.5)
+        end)
+    end
+    bgDrop.MouseButton1Click:Connect(function()
+        bgList.Visible = not bgList.Visible
+        if bgList.Visible then
+            bgList.Size = UDim2.new(1, 0, 0, #bgTextures * 28 + 8)
+        else
+            bgList.Size = UDim2.new(1, 0, 0, 0)
+        end
+    end)
 
     -- Section: Keybind
     Create("TextLabel", {
