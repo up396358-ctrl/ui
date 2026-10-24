@@ -566,7 +566,7 @@ function Library:CreateWindow(config)
     local TitleLabel = Create("TextLabel", {
         Name = "Title",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -120, 1, 0),
+        Size = UDim2.new(1, -150, 1, 0),
         Position = UDim2.fromOffset(18, 0),
         Font = Enum.Font.GothamBold,
         Text = title,
@@ -582,7 +582,445 @@ function Library:CreateWindow(config)
     local isMinimized = false
     local fullSize = size
 
-    -- Minimize button (next to close)
+    -- ── Built-in Settings Panel (separate GUI) ────────────────────────────
+    local SettingsPanel = Create("Frame", {
+        Name = "FrostveilSettings",
+        BackgroundColor3 = Color3.fromRGB(12, 16, 24),
+        BackgroundTransparency = 0.08,
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(320, 420),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Visible = false,
+        ZIndex = 200,
+        Parent = ScreenGui,
+        ClipsDescendants = true,
+    })
+    Round(SettingsPanel, 12)
+    Stroke(SettingsPanel, Library.AccentColor, 1.2, 0.4)
+    Library:MakeDraggable(SettingsPanel, 40)
+
+    local settingsScale = Instance.new("UIScale")
+    settingsScale.Scale = 1
+    settingsScale.Parent = SettingsPanel
+
+    local SettingsTop = Create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(16, 22, 34),
+        BackgroundTransparency = 0.2,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 40),
+        ZIndex = 201,
+        Parent = SettingsPanel,
+    })
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -50, 1, 0),
+        Position = UDim2.fromOffset(14, 0),
+        Font = Enum.Font.GothamBold,
+        Text = "Settings",
+        TextSize = 14,
+        TextColor3 = Library.FontColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsTop,
+    })
+    local SettingsClose = Create("TextButton", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(36, 36),
+        Position = UDim2.new(1, -40, 0.5, -18),
+        Font = Enum.Font.GothamBold,
+        Text = "×",
+        TextSize = 20,
+        TextColor3 = Color3.fromRGB(175, 190, 215),
+        ZIndex = 202,
+        Parent = SettingsTop,
+    })
+
+    local SettingsScroll = Create("ScrollingFrame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -16, 1, -52),
+        Position = UDim2.fromOffset(8, 46),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Library.AccentColor,
+        BorderSizePixel = 0,
+        ZIndex = 201,
+        Parent = SettingsPanel,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ClipsDescendants = true,
+    })
+    local settingsList = ListLayout(SettingsScroll, 10)
+    Padding(SettingsScroll, 8, 12, 8, 8)
+
+    -- HSV Color picker builder (Linoria-style: sat/val square + hue bar)
+    local function addColorPickerRow(labelText, colorKey)
+        local row = Create("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 150),
+            ZIndex = 202,
+            Parent = SettingsScroll,
+        })
+        Create("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 18),
+            Font = Enum.Font.GothamMedium,
+            Text = labelText,
+            TextSize = 12,
+            TextColor3 = Color3.fromRGB(180, 200, 230),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 203,
+            Parent = row,
+        })
+
+        local current = Library[colorKey] or Color3.fromRGB(100, 210, 255)
+        local h, s, v = Color3.toHSV(current)
+
+        -- Saturation / Value square
+        local svBox = Create("ImageButton", {
+            BackgroundColor3 = Color3.fromHSV(h, 1, 1),
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(140, 110),
+            Position = UDim2.fromOffset(0, 24),
+            Image = "rbxassetid://4155801252", -- blank white for gradient overlay
+            ImageTransparency = 1,
+            AutoButtonColor = false,
+            ZIndex = 203,
+            Parent = row,
+        })
+        Round(svBox, 6)
+        -- White -> transparent horizontal (saturation)
+        local satGrad = Instance.new("UIGradient")
+        satGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1)),
+        })
+        satGrad.Parent = svBox
+
+        local valOverlay = Create("Frame", {
+            BackgroundColor3 = Color3.new(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.fromScale(1, 1),
+            ZIndex = 204,
+            Parent = svBox,
+        })
+        Round(valOverlay, 6)
+        local valGrad = Instance.new("UIGradient")
+        valGrad.Rotation = 90
+        valGrad.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(1, 0),
+        })
+        valGrad.Parent = valOverlay
+
+        local svCursor = Create("Frame", {
+            BackgroundColor3 = Color3.new(1, 1, 1),
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(10, 10),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.fromScale(s, 1 - v),
+            ZIndex = 205,
+            Parent = svBox,
+        })
+        Round(svCursor, 5)
+        Stroke(svCursor, Color3.new(0, 0, 0), 1, 0.3)
+
+        -- Hue bar
+        local hueBar = Create("ImageButton", {
+            BackgroundColor3 = Color3.new(1, 1, 1),
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(18, 110),
+            Position = UDim2.fromOffset(150, 24),
+            AutoButtonColor = false,
+            ZIndex = 203,
+            Parent = row,
+        })
+        Round(hueBar, 4)
+        local hueGrad = Instance.new("UIGradient")
+        hueGrad.Rotation = 90
+        hueGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)),
+        })
+        hueGrad.Parent = hueBar
+
+        local hueCursor = Create("Frame", {
+            BackgroundColor3 = Color3.new(1, 1, 1),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 4, 0, 4),
+            Position = UDim2.new(0, -2, h, -2),
+            ZIndex = 205,
+            Parent = hueBar,
+        })
+        Round(hueCursor, 2)
+        Stroke(hueCursor, Color3.new(0, 0, 0), 1, 0.4)
+
+        -- Preview
+        local preview = Create("Frame", {
+            BackgroundColor3 = current,
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(48, 48),
+            Position = UDim2.fromOffset(184, 24),
+            ZIndex = 203,
+            Parent = row,
+        })
+        Round(preview, 8)
+        Stroke(preview, Color3.fromRGB(80, 100, 140), 1, 0.4)
+
+        local hexLabel = Create("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromOffset(100, 20),
+            Position = UDim2.fromOffset(184, 80),
+            Font = Enum.Font.Gotham,
+            Text = "",
+            TextSize = 11,
+            TextColor3 = Color3.fromRGB(160, 180, 210),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 203,
+            Parent = row,
+        })
+
+        local function applyColor(nh, ns, nv)
+            h, s, v = nh, ns, nv
+            local c = Color3.fromHSV(h, s, v)
+            Library[colorKey] = c
+            preview.BackgroundColor3 = c
+            svBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+            satGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+                ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1)),
+            })
+            svCursor.Position = UDim2.fromScale(s, 1 - v)
+            hueCursor.Position = UDim2.new(0, -2, h, -2)
+            local r = math.floor(c.R * 255 + 0.5)
+            local g = math.floor(c.G * 255 + 0.5)
+            local b = math.floor(c.B * 255 + 0.5)
+            hexLabel.Text = string.format("#%02X%02X%02X", r, g, b)
+            Library:UpdateColorsUsingRegistry()
+        end
+
+        local function colorFromSV(inputPos)
+            local rel = inputPos - svBox.AbsolutePosition
+            local ns = math.clamp(rel.X / svBox.AbsoluteSize.X, 0, 1)
+            local nv = 1 - math.clamp(rel.Y / svBox.AbsoluteSize.Y, 0, 1)
+            applyColor(h, ns, nv)
+        end
+        local function colorFromHue(inputPos)
+            local rel = inputPos - hueBar.AbsolutePosition
+            local nh = math.clamp(rel.Y / hueBar.AbsoluteSize.Y, 0, 1)
+            applyColor(nh, s, v)
+        end
+
+        local draggingSV, draggingHue = false, false
+        svBox.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSV = true
+                colorFromSV(Vector2.new(Mouse.X, Mouse.Y))
+            end
+        end)
+        hueBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingHue = true
+                colorFromHue(Vector2.new(Mouse.X, Mouse.Y))
+            end
+        end)
+        Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSV, draggingHue = false, false
+            end
+        end))
+        Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+            if draggingSV then colorFromSV(Vector2.new(Mouse.X, Mouse.Y)) end
+            if draggingHue then colorFromHue(Vector2.new(Mouse.X, Mouse.Y)) end
+        end))
+
+        applyColor(h, s, v)
+        return row
+    end
+
+    -- Section: Colors
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.GothamBold,
+        Text = "Theme Colors",
+        TextSize = 13,
+        TextColor3 = Library.AccentColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    addColorPickerRow("Accent", "AccentColor")
+    addColorPickerRow("Background", "BackgroundColor")
+    addColorPickerRow("Main / Panels", "MainColor")
+    addColorPickerRow("Text", "FontColor")
+    addColorPickerRow("Outline", "OutlineColor")
+
+    -- Section: Keybind
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.GothamBold,
+        Text = "Menu Keybind",
+        TextSize = 13,
+        TextColor3 = Library.AccentColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    local keyDisplay = Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 18),
+        Font = Enum.Font.Gotham,
+        Text = "Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift"),
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(180, 200, 230),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    local keyBtn = Create("TextButton", {
+        BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+        BackgroundTransparency = 0.4,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 32),
+        Font = Enum.Font.GothamMedium,
+        Text = "Click then press a key",
+        TextSize = 12,
+        TextColor3 = Library.FontColor,
+        AutoButtonColor = false,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    Round(keyBtn, 8)
+    Stroke(keyBtn, Library.AccentColor, 1, 0.6)
+    local listeningKey = false
+    keyBtn.MouseButton1Click:Connect(function()
+        if listeningKey then return end
+        listeningKey = true
+        keyBtn.Text = "Press any key..."
+        local conn
+        conn = UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local name = input.KeyCode.Name
+                Library.ToggleKeybind = name
+                listeningKey = false
+                pcall(function() conn:Disconnect() end)
+                keyBtn.Text = "Click then press a key"
+                keyDisplay.Text = "Toggle Key: " .. name
+                Library:Notify("Toggle key: " .. name, 2)
+            end
+        end)
+        Library:GiveSignal(conn)
+        task.delay(5, function()
+            if listeningKey then
+                listeningKey = false
+                pcall(function() conn:Disconnect() end)
+                keyBtn.Text = "Click then press a key"
+            end
+        end)
+    end)
+
+    -- Section: Extra
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.GothamBold,
+        Text = "Extras",
+        TextSize = 13,
+        TextColor3 = Library.AccentColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    local snowBtn = Create("TextButton", {
+        BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+        BackgroundTransparency = 0.4,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 32),
+        Font = Enum.Font.GothamMedium,
+        Text = "Toggle Snow Effect",
+        TextSize = 12,
+        TextColor3 = Library.FontColor,
+        AutoButtonColor = false,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    Round(snowBtn, 8)
+    local snowOn = true
+    snowBtn.MouseButton1Click:Connect(function()
+        snowOn = not snowOn
+        if Window.Snow and Window.Snow.SetEnabled then
+            Window.Snow:SetEnabled(snowOn)
+        end
+        Library:Notify(snowOn and "Snow on" or "Snow off", 1.5)
+    end)
+
+    local function openSettings()
+        SettingsPanel.Visible = true
+        settingsScale.Scale = 0.92
+        TweenService:Create(settingsScale, TweenInfo.new(0.28, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
+            Scale = 1
+        }):Play()
+    end
+    local function closeSettings()
+        TweenService:Create(settingsScale, TweenInfo.new(0.18, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+            Scale = 0.94
+        }):Play()
+        task.delay(0.16, function()
+            SettingsPanel.Visible = false
+            settingsScale.Scale = 1
+        end)
+    end
+    SettingsClose.MouseButton1Click:Connect(closeSettings)
+    SettingsClose.MouseEnter:Connect(function()
+        TweenService:Create(SettingsClose, TweenInfo.new(0.12), { TextColor3 = Library.RiskColor }):Play()
+    end)
+    SettingsClose.MouseLeave:Connect(function()
+        TweenService:Create(SettingsClose, TweenInfo.new(0.12), { TextColor3 = Color3.fromRGB(175, 190, 215) }):Play()
+    end)
+
+    Window.OpenSettings = openSettings
+    Window.CloseSettings = closeSettings
+
+    -- Settings gear button
+    local SettingsButton = Create("TextButton", {
+        Name = "Settings",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(32, 32),
+        Position = UDim2.new(1, -110, 0.5, -16),
+        Font = Enum.Font.GothamBold,
+        Text = "⚙",
+        TextSize = 16,
+        TextColor3 = Color3.fromRGB(175, 190, 215),
+        ZIndex = 12,
+        Parent = TopBar,
+    })
+    SettingsButton.MouseButton1Click:Connect(function()
+        if SettingsPanel.Visible then
+            closeSettings()
+        else
+            openSettings()
+        end
+    end)
+    SettingsButton.MouseEnter:Connect(function()
+        TweenService:Create(SettingsButton, TweenInfo.new(0.12), {
+            TextColor3 = Library.AccentColor
+        }):Play()
+    end)
+    SettingsButton.MouseLeave:Connect(function()
+        TweenService:Create(SettingsButton, TweenInfo.new(0.12), {
+            TextColor3 = Color3.fromRGB(175, 190, 215)
+        }):Play()
+    end)
+
+    -- Minimize button
     local MinButton = Create("TextButton", {
         Name = "Minimize",
         BackgroundTransparency = 1,
@@ -595,7 +1033,6 @@ function Library:CreateWindow(config)
         ZIndex = 12,
         Parent = TopBar,
     })
-    -- Minimize = fully hide UI (keybind shows it again)
     MinButton.MouseButton1Click:Connect(function()
         Window:Hide()
     end)
@@ -610,7 +1047,7 @@ function Library:CreateWindow(config)
         }):Play()
     end)
 
-    -- Close button = fully unload library / shut off
+    -- Close button = fully unload
     local CloseButton = Create("TextButton", {
         Name = "Close",
         BackgroundTransparency = 1,
@@ -1876,76 +2313,9 @@ function ThemeManager:ApplyTheme(themeName)
 end
 
 function ThemeManager:ApplyToTab(tab)
+    -- Menu settings (colors + keybind) live in the gear Settings panel.
+    -- This is left as a no-op so configs can stay on their own tab.
     if not tab then return end
-
-    local controls = tab:AddLeftGroupbox("Menu Controls")
-
-    -- Click button → press any key to bind (no dropdown)
-    local listening = false
-    local keyLabel = controls:AddLabel("Menu Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift"))
-    controls:AddButton({
-        Text = "Set Toggle Key (click then press key)",
-        Func = function()
-            if listening then return end
-            listening = true
-            keyLabel:SetText("Menu Toggle Key: [press a key...]")
-            Library:Notify("Press any key to bind menu toggle...", 3)
-            local conn
-            conn = UserInputService.InputBegan:Connect(function(input, gp)
-                if gp then return end
-                if input.UserInputType == Enum.UserInputType.Keyboard then
-                    local name = input.KeyCode.Name
-                    Library.ToggleKeybind = name
-                    listening = false
-                    pcall(function() conn:Disconnect() end)
-                    keyLabel:SetText("Menu Toggle Key: " .. name)
-                    Library:Notify("Toggle key set to " .. name, 2)
-                end
-            end)
-            Library:GiveSignal(conn)
-            task.delay(5, function()
-                if listening then
-                    listening = false
-                    pcall(function() conn:Disconnect() end)
-                    keyLabel:SetText("Menu Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift"))
-                    Library:Notify("Key bind cancelled", 2)
-                end
-            end)
-        end,
-    })
-
-    controls:AddToggle("SnowToggle", {
-        Text = "Snow Effect",
-        Default = true,
-        Callback = function(v)
-            for _, win in ipairs(Library.Windows or {}) do
-                if win.Snow and win.Snow.SetEnabled then
-                    win.Snow:SetEnabled(v)
-                end
-            end
-        end,
-    })
-    controls:AddButton({
-        Text = "Apply Background Texture",
-        Func = function()
-            for _, win in ipairs(Library.Windows or {}) do
-                if win.SetBackgroundImage then
-                    win:SetBackgroundImage("125296886011244", 0.15)
-                end
-            end
-            Library:Notify("Background texture applied", 2)
-        end,
-    })
-    controls:AddButton({
-        Text = "Clear Background",
-        Func = function()
-            for _, win in ipairs(Library.Windows or {}) do
-                if win.SetBackgroundImage then
-                    win:SetBackgroundImage(nil)
-                end
-            end
-        end,
-    })
 end
 
 -- ══════════════════════════════════════════════════════════════════════════════
