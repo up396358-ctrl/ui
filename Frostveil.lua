@@ -401,6 +401,99 @@ local function CreateSnowSystem(parent, config)
     }
 end
 
+-- Cross rain effect (falling crosses, same integration style as snow)
+local function CreateCrossRainSystem(parent, config)
+    config = config or {}
+    local crossCount = config.CrossCount or 26
+    local enabled = false
+    local rng = Random.new()
+
+    local container = Create("Frame", {
+        Name = "CrossRainContainer",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        ClipsDescendants = true,
+        ZIndex = 79,
+        Visible = false,
+        Parent = parent,
+    })
+
+    local crosses = {}
+    for i = 1, crossCount do
+        local scale = rng:NextNumber(0.82, 1.12)
+        local width = 17 * scale
+        local height = 49 * scale
+        local holder = Create("Frame", {
+            Name = "FallingCross",
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(width, height),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            ZIndex = 80,
+            Parent = container,
+        })
+        local vertical = Create("Frame", {
+            Name = "Vertical",
+            BackgroundColor3 = Color3.fromRGB(5, 5, 8),
+            BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromScale(0.19, 1),
+            ZIndex = 81,
+            Parent = holder,
+        })
+        local horizontal = Create("Frame", {
+            Name = "Horizontal",
+            BackgroundColor3 = Color3.fromRGB(5, 5, 8),
+            BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.fromScale(0.5, 0.35),
+            Size = UDim2.fromScale(1, 0.14),
+            ZIndex = 81,
+            Parent = holder,
+        })
+        crosses[i] = {
+            gui = holder,
+            height = height,
+            x = rng:NextNumber(0, 1),
+            y = rng:NextNumber(-0.2, 1),
+            speed = rng:NextNumber(55, 90),
+        }
+        holder.Position = UDim2.new(crosses[i].x, 0, crosses[i].y, 0)
+    end
+
+    local connection = RenderStepped:Connect(function(dt)
+        if not enabled or not container.Parent then return end
+        dt = math.min(dt, 1 / 30)
+        for _, cross in ipairs(crosses) do
+            cross.y = cross.y + (cross.speed * dt) / 600
+            if cross.y > 1.15 then
+                cross.y = -0.12
+                cross.x = rng:NextNumber(0, 1)
+                cross.speed = rng:NextNumber(55, 90)
+            end
+            cross.gui.Position = UDim2.new(cross.x, 0, cross.y, 0)
+            cross.gui.Rotation = 0
+        end
+    end)
+    Library:GiveSignal(connection)
+
+    return {
+        Container = container,
+        SetEnabled = function(_, state)
+            enabled = state and true or false
+            container.Visible = enabled
+        end,
+        IsEnabled = function()
+            return enabled
+        end,
+        Destroy = function()
+            pcall(function() connection:Disconnect() end)
+            container:Destroy()
+        end,
+    }
+end
+
 -- ══════════════════════════════════════════════════════════════════════════════
 -- DRAGGING
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -873,24 +966,17 @@ function Library:CreateWindow(config)
         ZIndex = 202,
         Parent = SettingsScroll,
     })
-    local keyDisplay = Create("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 18),
-        Font = Enum.Font.Gotham,
-        Text = "Toggle Key: " .. tostring(Library.ToggleKeybind or "RightShift"),
-        TextSize = 12,
-        TextColor3 = Color3.fromRGB(180, 200, 230),
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 202,
-        Parent = SettingsScroll,
-    })
+    local function currentKeyText()
+        return tostring(Library.ToggleKeybind or "RightShift")
+    end
+
     local keyBtn = Create("TextButton", {
         BackgroundColor3 = Color3.fromRGB(20, 28, 42),
         BackgroundTransparency = 0.4,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 32),
         Font = Enum.Font.GothamMedium,
-        Text = "Click then press a key",
+        Text = currentKeyText(),
         TextSize = 12,
         TextColor3 = Library.FontColor,
         AutoButtonColor = false,
@@ -912,8 +998,7 @@ function Library:CreateWindow(config)
                 Library.ToggleKeybind = name
                 listeningKey = false
                 pcall(function() conn:Disconnect() end)
-                keyBtn.Text = "Click then press a key"
-                keyDisplay.Text = "Toggle Key: " .. name
+                keyBtn.Text = name
                 Library:Notify("Toggle key: " .. name, 2)
             end
         end)
@@ -922,45 +1007,177 @@ function Library:CreateWindow(config)
             if listeningKey then
                 listeningKey = false
                 pcall(function() conn:Disconnect() end)
-                keyBtn.Text = "Click then press a key"
+                keyBtn.Text = currentKeyText()
             end
         end)
     end)
 
-    -- Section: Extra
+    -- Section: Effects
     Create("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 0, 20),
         Font = Enum.Font.GothamBold,
-        Text = "Extras",
+        Text = "Effects",
         TextSize = 13,
         TextColor3 = Library.AccentColor,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 202,
         Parent = SettingsScroll,
     })
-    local snowBtn = Create("TextButton", {
-        BackgroundColor3 = Color3.fromRGB(20, 28, 42),
-        BackgroundTransparency = 0.4,
+
+    -- Effect enabled toggle (UI toggle style)
+    local effectOn = true
+    local effectToggleRow = Create("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 28),
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -54, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = "Enable Effect",
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(220, 230, 245),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 203,
+        Parent = effectToggleRow,
+    })
+    local eTrack = Create("Frame", {
+        BackgroundColor3 = Library.ToggleOnColor,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 32),
+        Size = UDim2.fromOffset(44, 24),
+        Position = UDim2.new(1, -44, 0.5, -12),
+        ZIndex = 203,
+        Parent = effectToggleRow,
+    })
+    Round(eTrack, 12)
+    local eKnob = Create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(250, 252, 255),
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(18, 18),
+        Position = UDim2.fromOffset(23, 3),
+        ZIndex = 204,
+        Parent = eTrack,
+    })
+    Round(eKnob, 9)
+
+    local function applyEffectState()
+        local mode = Window.ActiveEffect or "Snow"
+        if Window.Snow then Window.Snow:SetEnabled(effectOn and mode == "Snow") end
+        if Window.CrossRain then Window.CrossRain:SetEnabled(effectOn and mode == "Cross Rain") end
+    end
+
+    local eClick = Create("TextButton", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        Text = "",
+        ZIndex = 205,
+        Parent = effectToggleRow,
+    })
+    eClick.MouseButton1Click:Connect(function()
+        effectOn = not effectOn
+        local targetPos = effectOn and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
+        local targetColor = effectOn and Library.ToggleOnColor or Library.ToggleOffColor
+        TweenService:Create(eKnob, TweenInfo.new(0.22, Enum.EasingStyle.Exponential), { Position = targetPos }):Play()
+        TweenService:Create(eTrack, TweenInfo.new(0.22, Enum.EasingStyle.Exponential), { BackgroundColor3 = targetColor }):Play()
+        applyEffectState()
+    end)
+
+    -- Effect type dropdown (simple built-in)
+    Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 16),
+        Font = Enum.Font.Gotham,
+        Text = "Effect Type",
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(180, 200, 230),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 202,
+        Parent = SettingsScroll,
+    })
+    local effectOptions = { "Snow", "Cross Rain", "None" }
+    local effectDrop = Create("TextButton", {
+        BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+        BackgroundTransparency = 0.35,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 30),
         Font = Enum.Font.GothamMedium,
-        Text = "Toggle Snow Effect",
+        Text = "  Snow  ▼",
         TextSize = 12,
         TextColor3 = Library.FontColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
         AutoButtonColor = false,
         ZIndex = 202,
         Parent = SettingsScroll,
     })
-    Round(snowBtn, 8)
-    local snowOn = true
-    snowBtn.MouseButton1Click:Connect(function()
-        snowOn = not snowOn
-        if Window.Snow and Window.Snow.SetEnabled then
-            Window.Snow:SetEnabled(snowOn)
+    Round(effectDrop, 8)
+    Stroke(effectDrop, Library.AccentColor, 1, 0.55)
+
+    local effectList = Create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(14, 18, 28),
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 0),
+        Visible = false,
+        ZIndex = 300,
+        Parent = SettingsScroll,
+        ClipsDescendants = true,
+    })
+    Round(effectList, 8)
+    local effectListLayout = ListLayout(effectList, 2)
+    Padding(effectList, 4, 4, 4, 4)
+
+    local function setEffectMode(mode)
+        Window.ActiveEffect = mode
+        if mode == "None" then
+            effectOn = false
+            eKnob.Position = UDim2.fromOffset(3, 3)
+            eTrack.BackgroundColor3 = Library.ToggleOffColor
+        elseif not effectOn then
+            effectOn = true
+            eKnob.Position = UDim2.fromOffset(23, 3)
+            eTrack.BackgroundColor3 = Library.ToggleOnColor
         end
-        Library:Notify(snowOn and "Snow on" or "Snow off", 1.5)
+        effectDrop.Text = "  " .. mode .. "  ▼"
+        effectList.Visible = false
+        effectList.Size = UDim2.new(1, 0, 0, 0)
+        applyEffectState()
+        Library:Notify("Effect: " .. mode, 1.5)
+    end
+
+    for _, opt in ipairs(effectOptions) do
+        local optBtn = Create("TextButton", {
+            BackgroundColor3 = Color3.fromRGB(20, 28, 42),
+            BackgroundTransparency = 0.3,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 26),
+            Font = Enum.Font.Gotham,
+            Text = "  " .. opt,
+            TextSize = 12,
+            TextColor3 = Library.FontColor,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutoButtonColor = false,
+            ZIndex = 301,
+            Parent = effectList,
+        })
+        Round(optBtn, 5)
+        optBtn.MouseButton1Click:Connect(function()
+            setEffectMode(opt)
+        end)
+    end
+
+    effectDrop.MouseButton1Click:Connect(function()
+        effectList.Visible = not effectList.Visible
+        if effectList.Visible then
+            effectList.Size = UDim2.new(1, 0, 0, #effectOptions * 28 + 8)
+        else
+            effectList.Size = UDim2.new(1, 0, 0, 0)
+        end
     end)
+
+    applyEffectState()
 
     local function openSettings()
         SettingsPanel.Visible = true
@@ -1114,8 +1331,10 @@ function Library:CreateWindow(config)
         ClipsDescendants = true,
     })
 
-    -- Snow
+    -- Effects (snow + cross rain)
     Window.Snow = CreateSnowSystem(Outer, { MaxFlakes = 70 })
+    Window.CrossRain = CreateCrossRainSystem(Outer, { CrossCount = 26 })
+    Window.ActiveEffect = "Snow" -- "Snow" | "Cross Rain" | "None"
 
     -- Dragging
     Library:MakeDraggable(Outer, 42)
