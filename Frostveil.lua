@@ -79,7 +79,7 @@ local Library = {
     ScreenGui       = ScreenGui,
 
     -- Theme (Premium Void Ice)
-    FontColor       = Color3.fromRGB(242, 248, 255),
+    FontColor       = Color3.fromRGB(255, 255, 255),
     MainColor       = Color3.fromRGB(16, 20, 32),
     BackgroundColor = Color3.fromRGB(7, 9, 14),
     AccentColor     = Color3.fromRGB(100, 210, 255),
@@ -550,18 +550,18 @@ function Library:CreateWindow(config)
         Window:SetBackgroundImage(backgroundImage, backgroundTransparency)
     end
 
-    -- Top bar (clean, no inner cover strips)
+    -- Top bar follows Background (not Main/Panels) — stays clear of solid panel color
     local TopBar = Create("Frame", {
         Name = "TopBar",
-        BackgroundColor3 = Library.MainColor,
-        BackgroundTransparency = 0.90,
+        BackgroundColor3 = Library.BackgroundColor,
+        BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 44),
         Parent = Outer,
         ZIndex = 10,
     })
     Round(TopBar, 14)
-    Library:AddToRegistry(TopBar, { BackgroundColor3 = "MainColor" })
+    Library:AddToRegistry(TopBar, { BackgroundColor3 = "BackgroundColor" })
 
     local TitleLabel = Create("TextLabel", {
         Name = "Title",
@@ -2243,7 +2243,7 @@ ThemeManager.Library = nil
 ThemeManager.Folder = "FrostveilThemes"
 ThemeManager.Themes = {
     ["Default"] = {
-        FontColor = Color3.fromRGB(235, 245, 255),
+        FontColor = Color3.fromRGB(255, 255, 255),
         MainColor = Color3.fromRGB(14, 17, 26),
         BackgroundColor = Color3.fromRGB(9, 11, 18),
         AccentColor = Color3.fromRGB(110, 200, 255),
