@@ -88,7 +88,7 @@ local Library = {
     SidebarColor    = Color3.fromRGB(9, 11, 18),
     ToggleOnColor   = Color3.fromRGB(70, 195, 255),
     ToggleOffColor  = Color3.fromRGB(26, 34, 52),
-    GroupTitleColor = Color3.fromRGB(150, 215, 255),
+    GroupTitleColor = Color3.fromRGB(255, 255, 255),
     Black           = Color3.new(0, 0, 0),
     Font            = Enum.Font.GothamMedium,
 
@@ -881,6 +881,24 @@ function Library:CreateWindow(config)
             h, s, v = nh, ns, nv
             local c = Color3.fromHSV(h, s, v)
             Library[colorKey] = c
+            if colorKey == "AccentColor" then
+                Library.ToggleOnColor = c
+                Library.GroupTitleColor = c
+                Library.OutlineColor = Color3.fromRGB(
+                    math.floor(c.R * 100 + 30),
+                    math.floor(c.G * 100 + 40),
+                    math.floor(c.B * 100 + 50)
+                )
+            elseif colorKey == "BackgroundColor" then
+                Library.MainColor = Color3.fromRGB(
+                    math.min(255, math.floor(c.R * 255 + 14)),
+                    math.min(255, math.floor(c.G * 255 + 16)),
+                    math.min(255, math.floor(c.B * 255 + 20))
+                )
+                Library.SidebarColor = c
+            elseif colorKey == "FontColor" then
+                Library.GroupTitleColor = c
+            end
             preview.BackgroundColor3 = c
             svBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
             satGrad.Color = ColorSequence.new({
@@ -948,11 +966,10 @@ function Library:CreateWindow(config)
         ZIndex = 202,
         Parent = SettingsScroll,
     })
+    -- Only 3 pickers control the whole UI
     addColorPickerRow("Accent", "AccentColor")
     addColorPickerRow("Background", "BackgroundColor")
-    addColorPickerRow("Main / Panels", "MainColor")
     addColorPickerRow("Text", "FontColor")
-    addColorPickerRow("Outline", "OutlineColor")
 
     -- Section: Keybind
     Create("TextLabel", {
@@ -1427,7 +1444,8 @@ function Library:CreateWindow(config)
             Font = Enum.Font.GothamMedium,
             Text = name,
             TextSize = 13,
-            TextColor3 = Color3.fromRGB(130, 155, 190),
+            TextColor3 = Library.FontColor,
+            TextTransparency = 0.35,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextScaled = true,
             AutoButtonColor = false,
@@ -1523,7 +1541,8 @@ function Library:CreateWindow(config)
                 if otherTab ~= Tab then
                     otherTab.Container.Visible = false
                     otherTab.Button.BackgroundTransparency = 1
-                    otherTab.Button.TextColor3 = Color3.fromRGB(130, 155, 190)
+                    otherTab.Button.TextColor3 = Library.FontColor
+                    otherTab.Button.TextTransparency = 0.35
                     local st = otherTab.Button:FindFirstChildOfClass("UIStroke")
                     if st then st.Transparency = 1 end
                     otherTab.Active = false
@@ -1540,6 +1559,7 @@ function Library:CreateWindow(config)
             TweenService:Create(tabButton, TweenInfo.new(0.25, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                 BackgroundTransparency = 0.55,
                 TextColor3 = Library.FontColor,
+                TextTransparency = 0,
             }):Play()
             if tabStroke then
                 TweenService:Create(tabStroke, TweenInfo.new(0.25, Enum.EasingStyle.Exponential), {
@@ -1601,9 +1621,9 @@ function Library:CreateWindow(config)
                 Parent = parentCol,
             })
             Round(box, 12)
-            -- Soft outer stroke only (no inner black bars)
-            Stroke(box, Library.AccentColor, 1, 0.72)
+            local boxStroke = Stroke(box, Library.OutlineColor, 1, 0.55)
             Library:AddToRegistry(box, { BackgroundColor3 = "MainColor" })
+            Library:AddToRegistry(boxStroke, { Color = "OutlineColor" })
 
             local boxTitle = Create("TextLabel", {
                 BackgroundTransparency = 1,
@@ -1612,12 +1632,13 @@ function Library:CreateWindow(config)
                 Font = Enum.Font.GothamBold,
                 Text = titleText,
                 TextSize = 13,
-                TextColor3 = Library.GroupTitleColor or Library.AccentColor,
+                TextColor3 = Library.FontColor,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextScaled = true,
                 ZIndex = 12,
                 Parent = box,
             })
+            Library:AddToRegistry(boxTitle, { TextColor3 = "FontColor" })
             local boxTitleLimit = Instance.new("UITextSizeConstraint")
             boxTitleLimit.MaxTextSize = 13
             boxTitleLimit.MinTextSize = 9
