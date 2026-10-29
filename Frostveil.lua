@@ -1709,31 +1709,39 @@ function Library:CreateWindow(config)
 
         Tab.Button = tabButton
 
-        -- Content: absolute LEFT / RIGHT columns (side by side)
-        local container = Instance.new("ScrollingFrame")
+        -- Content: dual panes — left 50% / right 50% (never stacks)
+        local container = Instance.new("Frame")
         container.Name = name .. "_Content"
         container.BackgroundTransparency = 1
         container.Size = UDim2.fromScale(1, 1)
-        container.CanvasSize = UDim2.new(0, 0, 0, 0)
-        container.ScrollBarThickness = 4
-        container.ScrollBarImageColor3 = Library.AccentColor
         container.BorderSizePixel = 0
         container.Visible = false
         container.ZIndex = 9
-        container.ClipsDescendants = true
-        container.ScrollingEnabled = true
-        container.ElasticBehavior = Enum.ElasticBehavior.Never
-        container.Active = true
         container.Parent = ContentHolder
+
+        local leftScroll = Instance.new("ScrollingFrame")
+        leftScroll.Name = "LeftScroll"
+        leftScroll.BackgroundTransparency = 1
+        leftScroll.BorderSizePixel = 0
+        leftScroll.Size = UDim2.new(0.5, -8, 1, -8)
+        leftScroll.Position = UDim2.new(0, 4, 0, 4)
+        leftScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        leftScroll.ScrollBarThickness = 3
+        leftScroll.ScrollBarImageColor3 = Library.AccentColor
+        leftScroll.ScrollingEnabled = true
+        leftScroll.ElasticBehavior = Enum.ElasticBehavior.Never
+        leftScroll.ClipsDescendants = true
+        leftScroll.ZIndex = 10
+        leftScroll.Parent = container
 
         local leftCol = Instance.new("Frame")
         leftCol.Name = "LeftColumn"
         leftCol.BackgroundTransparency = 1
         leftCol.BorderSizePixel = 0
-        leftCol.Size = UDim2.new(0.5, -12, 1, 0)
-        leftCol.Position = UDim2.new(0, 6, 0, 6)
-        leftCol.ZIndex = 10
-        leftCol.Parent = container
+        leftCol.Size = UDim2.new(1, -4, 0, 0)
+        leftCol.AutomaticSize = Enum.AutomaticSize.Y
+        leftCol.ZIndex = 11
+        leftCol.Parent = leftScroll
 
         local leftList = Instance.new("UIListLayout")
         leftList.FillDirection = Enum.FillDirection.Vertical
@@ -1741,14 +1749,29 @@ function Library:CreateWindow(config)
         leftList.Padding = UDim.new(0, 10)
         leftList.Parent = leftCol
 
+        local rightScroll = Instance.new("ScrollingFrame")
+        rightScroll.Name = "RightScroll"
+        rightScroll.BackgroundTransparency = 1
+        rightScroll.BorderSizePixel = 0
+        rightScroll.Size = UDim2.new(0.5, -8, 1, -8)
+        rightScroll.Position = UDim2.new(0.5, 4, 0, 4)
+        rightScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        rightScroll.ScrollBarThickness = 3
+        rightScroll.ScrollBarImageColor3 = Library.AccentColor
+        rightScroll.ScrollingEnabled = true
+        rightScroll.ElasticBehavior = Enum.ElasticBehavior.Never
+        rightScroll.ClipsDescendants = true
+        rightScroll.ZIndex = 10
+        rightScroll.Parent = container
+
         local rightCol = Instance.new("Frame")
         rightCol.Name = "RightColumn"
         rightCol.BackgroundTransparency = 1
         rightCol.BorderSizePixel = 0
-        rightCol.Size = UDim2.new(0.5, -12, 1, 0)
-        rightCol.Position = UDim2.new(0.5, 6, 0, 6)
-        rightCol.ZIndex = 10
-        rightCol.Parent = container
+        rightCol.Size = UDim2.new(1, -4, 0, 0)
+        rightCol.AutomaticSize = Enum.AutomaticSize.Y
+        rightCol.ZIndex = 11
+        rightCol.Parent = rightScroll
 
         local rightList = Instance.new("UIListLayout")
         rightList.FillDirection = Enum.FillDirection.Vertical
@@ -1759,32 +1782,19 @@ function Library:CreateWindow(config)
         local leftCount, rightCount = 0, 0
 
         local function updateCanvas()
-            local w = container.AbsoluteSize.X
-            if w < 40 then w = ContentHolder.AbsoluteSize.X end
-            if w < 40 then w = 500 end
-
-            local half = math.floor((w - 18) / 2)
-            local lh = leftList.AbsoluteContentSize.Y + 8
-            local rh = rightList.AbsoluteContentSize.Y + 8
-            local h = math.max(lh, rh, 50)
-
-            leftCol.Size = UDim2.fromOffset(half, h)
-            leftCol.Position = UDim2.fromOffset(6, 6)
-            rightCol.Size = UDim2.fromOffset(half, h)
-            rightCol.Position = UDim2.fromOffset(6 + half + 6, 6)
-            container.CanvasSize = UDim2.fromOffset(0, h + 16)
+            leftScroll.CanvasSize = UDim2.fromOffset(0, leftList.AbsoluteContentSize.Y + 20)
+            rightScroll.CanvasSize = UDim2.fromOffset(0, rightList.AbsoluteContentSize.Y + 20)
         end
 
         leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
-        container:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCanvas)
         task.defer(updateCanvas)
-        task.delay(0.15, updateCanvas)
-        task.delay(0.6, updateCanvas)
 
         Tab.Container = container
         Tab.LeftColumn = leftCol
         Tab.RightColumn = rightCol
+        Tab.LeftScroll = leftScroll
+        Tab.RightScroll = rightScroll
         Tab.UpdateCanvas = updateCanvas
         Tab._leftCount = function()
             leftCount = leftCount + 1
