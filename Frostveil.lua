@@ -751,16 +751,22 @@ function Library:CreateWindow(config)
     Library:AddToRegistry(outerStroke, { Color = "AccentColor" })
 
     -- Background image layer (supports any rbxassetid)
+    -- Crop = fills UI without stretch/squash; maintains aspect ratio
     local BgImage = Create("ImageLabel", {
         Name = "BackgroundImage",
         BackgroundTransparency = 1,
+        BorderSizePixel = 0,
         Size = UDim2.fromScale(1, 1),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
         ScaleType = Enum.ScaleType.Crop,
+        ResampleMode = Enum.ResamplerMode.Default,
         ImageTransparency = 1,
         ZIndex = 1,
         Parent = Outer,
     })
     Round(BgImage, 12)
+    Outer.ClipsDescendants = true
     Window.BackgroundImageLabel = BgImage
 
     -- Minimal overlay — background texture fully visible
@@ -776,6 +782,14 @@ function Library:CreateWindow(config)
     Round(BgOverlay, 12)
     Library:AddToRegistry(BgOverlay, { BackgroundColor3 = "BackgroundColor" })
 
+    local function fitBackgroundImage()
+        -- Always fill Outer bounds; Crop keeps aspect (no squish / no oversized stretch)
+        BgImage.Size = UDim2.fromScale(1, 1)
+        BgImage.Position = UDim2.fromScale(0.5, 0.5)
+        BgImage.AnchorPoint = Vector2.new(0.5, 0.5)
+        BgImage.ScaleType = Enum.ScaleType.Crop
+    end
+
     function Window:SetBackgroundImage(assetId, transparency)
         if not assetId or assetId == "" or assetId == 0 or assetId == "0" then
             BgImage.Image = ""
@@ -785,7 +799,11 @@ function Library:CreateWindow(config)
         local id = tostring(assetId):gsub("rbxassetid://", ""):gsub("%s+", "")
         BgImage.Image = "rbxassetid://" .. id
         BgImage.ImageTransparency = transparency ~= nil and transparency or backgroundTransparency
+        fitBackgroundImage()
     end
+
+    -- Re-fit when the window is resized
+    Outer:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitBackgroundImage)
 
     function Window:SetBackgroundTransparency(value)
         BgImage.ImageTransparency = math.clamp(tonumber(value) or 0.4, 0, 1)
@@ -1141,15 +1159,13 @@ function Library:CreateWindow(config)
     })
     local bgTextures = {
         { Name = "Original", Id = "125296886011244" },
-        { Name = "Money", Id = "123207755204057" },
-        { Name = "SpongeBob", Id = "113644467007667" },
-        { Name = "Patrick", Id = "110741843032804" },
-        { Name = "Pocoyo", Id = "76046731513846" },
-        { Name = "The Thinker", Id = "111103813383430" },
-        { Name = "Hwz", Id = "114019424716952" },
-        { Name = "Rick n Morty", Id = "86699715536744" },
+        { Name = "Patrick", Id = "130152189846750" },
+        { Name = "Pocoyo", Id = "134844262260089" },
+        { Name = "The Thinker", Id = "71890428605210" },
+        { Name = "Hwz", Id = "134780559674403" },
+        { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
-        { Name = "100$", Id = "112830510425989" },
+        { Name = "100$", Id = "76496312144969" },
         { Name = "Vamp", Id = "97858858012046" },
         { Name = "None", Id = nil },
     }
