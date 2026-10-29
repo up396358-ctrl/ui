@@ -1143,6 +1143,14 @@ function Library:CreateWindow(config)
         { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
+        { Name = "Patrick", Id = "110741843032804" },
+        { Name = "Pocoyo", Id = "76046731513846" },
+        { Name = "The Thinker", Id = "111103813383430" },
+        { Name = "Hwz", Id = "114019424716952" },
+        { Name = "Rick n Morty", Id = "86699715536744" },
+        { Name = "Hollowoodz", Id = "120607586298139" },
+        { Name = "100$", Id = "112830510425989" },
+        { Name = "Vamp", Id = "97858858012046" },
         { Name = "None", Id = nil },
     }
     local bgDrop = Create("TextButton", {
