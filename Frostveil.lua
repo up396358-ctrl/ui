@@ -1709,12 +1709,13 @@ function Library:CreateWindow(config)
 
         Tab.Button = tabButton
 
-        -- Content area with TWO columns (left / right groupboxes)
+        -- Content: two real columns side-by-side (left / right groupboxes)
         local container = Create("ScrollingFrame", {
             Name = name .. "_Content",
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
             CanvasSize = UDim2.new(0, 0, 0, 0),
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.AccentColor,
             BorderSizePixel = 0,
@@ -1731,90 +1732,79 @@ function Library:CreateWindow(config)
         local columns = Create("Frame", {
             Name = "Columns",
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -8, 0, 100),
-            Position = UDim2.fromOffset(4, 0),
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
             Parent = container,
             ZIndex = 9,
         })
+        local columnsLayout = Instance.new("UIListLayout")
+        columnsLayout.FillDirection = Enum.FillDirection.Horizontal
+        columnsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+        columnsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        columnsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        columnsLayout.Padding = UDim.new(0, 10)
+        columnsLayout.Parent = columns
+        local columnsPad = Instance.new("UIPadding")
+        columnsPad.PaddingLeft = UDim.new(0, 4)
+        columnsPad.PaddingRight = UDim.new(0, 4)
+        columnsPad.PaddingTop = UDim.new(0, 4)
+        columnsPad.PaddingBottom = UDim.new(0, 8)
+        columnsPad.Parent = columns
 
-        -- Left column (AddLeftGroupbox)
+        -- LEFT column
         local leftCol = Create("Frame", {
             Name = "LeftColumn",
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Size = UDim2.new(0.5, -6, 0, 0),
-            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(0.5, -5, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            LayoutOrder = 1,
             Parent = columns,
             ZIndex = 9,
         })
         local leftList = Instance.new("UIListLayout")
         leftList.FillDirection = Enum.FillDirection.Vertical
-        leftList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-        leftList.VerticalAlignment = Enum.VerticalAlignment.Top
         leftList.SortOrder = Enum.SortOrder.LayoutOrder
         leftList.Padding = UDim.new(0, 10)
         leftList.Parent = leftCol
-        local leftPad = Instance.new("UIPadding")
-        leftPad.PaddingTop = UDim.new(0, 4)
-        leftPad.PaddingBottom = UDim.new(0, 12)
-        leftPad.PaddingLeft = UDim.new(0, 4)
-        leftPad.PaddingRight = UDim.new(0, 4)
-        leftPad.Parent = leftCol
 
-        -- Right column (AddRightGroupbox)
+        -- RIGHT column
         local rightCol = Create("Frame", {
             Name = "RightColumn",
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Size = UDim2.new(0.5, -6, 0, 0),
-            Position = UDim2.new(0.5, 6, 0, 0),
+            Size = UDim2.new(0.5, -5, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            LayoutOrder = 2,
             Parent = columns,
             ZIndex = 9,
         })
         local rightList = Instance.new("UIListLayout")
         rightList.FillDirection = Enum.FillDirection.Vertical
-        rightList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-        rightList.VerticalAlignment = Enum.VerticalAlignment.Top
         rightList.SortOrder = Enum.SortOrder.LayoutOrder
         rightList.Padding = UDim.new(0, 10)
         rightList.Parent = rightCol
-        local rightPad = Instance.new("UIPadding")
-        rightPad.PaddingTop = UDim.new(0, 4)
-        rightPad.PaddingBottom = UDim.new(0, 12)
-        rightPad.PaddingLeft = UDim.new(0, 4)
-        rightPad.PaddingRight = UDim.new(0, 4)
-        rightPad.Parent = rightCol
 
         local leftCount, rightCount = 0, 0
 
         local function updateCanvas()
-            -- Pixel widths so left/right columns never collapse to one stack
-            local width = container.AbsoluteSize.X
-            if width < 20 then
-                width = ContentHolder.AbsoluteSize.X
+            -- Keep canvas tall enough; width comes from the frame (AutomaticCanvasSize Y)
+            local h = math.max(leftList.AbsoluteContentSize.Y, rightList.AbsoluteContentSize.Y, 1) + 16
+            if container.AbsoluteSize.X > 0 then
+                -- force equal half widths in pixels (scale 0.5 can fail inside scrolling frames)
+                local half = math.floor((container.AbsoluteSize.X - 18) / 2)
+                leftCol.Size = UDim2.fromOffset(half, 0)
+                rightCol.Size = UDim2.fromOffset(half, 0)
+                leftCol.AutomaticSize = Enum.AutomaticSize.Y
+                rightCol.AutomaticSize = Enum.AutomaticSize.Y
             end
-            if width < 20 then
-                width = 420
-            end
-
-            local lh = leftList.AbsoluteContentSize.Y + 16
-            local rh = rightList.AbsoluteContentSize.Y + 16
-            local h = math.max(lh, rh, 40)
-            local colW = math.floor((width - 20) / 2)
-
-            leftCol.Size = UDim2.fromOffset(colW, math.max(lh, 1))
-            leftCol.Position = UDim2.fromOffset(4, 0)
-            rightCol.Size = UDim2.fromOffset(colW, math.max(rh, 1))
-            rightCol.Position = UDim2.fromOffset(8 + colW, 0)
-
-            columns.Size = UDim2.fromOffset(width - 4, h)
-            container.CanvasSize = UDim2.fromOffset(0, h + 12)
+            container.CanvasSize = UDim2.fromOffset(0, h)
         end
         leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         container:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCanvas)
         task.defer(updateCanvas)
-        task.delay(0.15, updateCanvas)
+        task.delay(0.2, updateCanvas)
 
         Tab.Container = container
         Tab.LeftColumn = leftCol
@@ -1898,39 +1888,34 @@ function Library:CreateWindow(config)
 
         function Tab:AddGroupbox(titleText, side)
             side = tostring(side or "left"):lower()
-            local isRight = (side == "right")
-            local parentCol = isRight and self.RightColumn or self.LeftColumn
-            if not parentCol then
-                parentCol = isRight and Tab.RightColumn or Tab.LeftColumn
-            end
-            if not parentCol then
-                warn("[Frostveil] No column for groupbox:", titleText, side)
-                parentCol = self.Container or Tab.Container
+            local isRight = (side == "right" or side == "r")
+            -- Always use this tab's column frames (never fall back to full container)
+            local parentCol = isRight and Tab.RightColumn or Tab.LeftColumn
+            if not parentCol or not parentCol.Parent then
+                warn("[Frostveil] Column missing for", titleText, "side=", side)
+                return nil
             end
 
-            local order = 1
-            if isRight and Tab._rightCount then
-                order = Tab._rightCount()
-            elseif (not isRight) and Tab._leftCount then
-                order = Tab._leftCount()
-            end
+            local order = isRight and Tab._rightCount() or Tab._leftCount()
 
             local Groupbox = {
                 Elements = {},
                 Side = isRight and "right" or "left",
             }
 
-            local box = Create("Frame", {
-                Name = tostring(titleText),
-                BackgroundColor3 = Library.MainColor,
-                BackgroundTransparency = 0.92,
-                BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, 48),
-                ZIndex = 10,
-                LayoutOrder = order,
-                Parent = parentCol,
-            })
+            local box = Instance.new("Frame")
+            box.Name = tostring(titleText)
+            box.BackgroundColor3 = Library.MainColor
+            box.BackgroundTransparency = 0.92
+            box.BorderSizePixel = 0
+            box.Size = UDim2.new(1, 0, 0, 48)
+            box.ZIndex = 10
+            box.LayoutOrder = order
+            box.Parent = parentCol
             Round(box, 10)
+            if Tab.UpdateCanvas then
+                task.defer(Tab.UpdateCanvas)
+            end
             local boxStroke = Stroke(box, Library.OutlineColor, 1, 0.55)
             Library:AddToRegistry(box, { BackgroundColor3 = "MainColor" })
             Library:AddToRegistry(boxStroke, { Color = "OutlineColor" })
