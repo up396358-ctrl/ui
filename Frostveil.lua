@@ -1788,17 +1788,33 @@ function Library:CreateWindow(config)
         local leftCount, rightCount = 0, 0
 
         local function updateCanvas()
-            local lh = leftList.AbsoluteContentSize.Y + 20
-            local rh = rightList.AbsoluteContentSize.Y + 20
-            local h = math.max(lh, rh, 50)
-            leftCol.Size = UDim2.new(0.5, -6, 0, lh)
-            rightCol.Size = UDim2.new(0.5, -6, 0, rh)
-            columns.Size = UDim2.new(1, -8, 0, h)
-            container.CanvasSize = UDim2.new(0, 0, 0, h + 8)
+            -- Pixel widths so left/right columns never collapse to one stack
+            local width = container.AbsoluteSize.X
+            if width < 20 then
+                width = ContentHolder.AbsoluteSize.X
+            end
+            if width < 20 then
+                width = 420
+            end
+
+            local lh = leftList.AbsoluteContentSize.Y + 16
+            local rh = rightList.AbsoluteContentSize.Y + 16
+            local h = math.max(lh, rh, 40)
+            local colW = math.floor((width - 20) / 2)
+
+            leftCol.Size = UDim2.fromOffset(colW, math.max(lh, 1))
+            leftCol.Position = UDim2.fromOffset(4, 0)
+            rightCol.Size = UDim2.fromOffset(colW, math.max(rh, 1))
+            rightCol.Position = UDim2.fromOffset(8 + colW, 0)
+
+            columns.Size = UDim2.fromOffset(width - 4, h)
+            container.CanvasSize = UDim2.fromOffset(0, h + 12)
         end
         leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+        container:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCanvas)
         task.defer(updateCanvas)
+        task.delay(0.15, updateCanvas)
 
         Tab.Container = container
         Tab.LeftColumn = leftCol
@@ -1812,10 +1828,6 @@ function Library:CreateWindow(config)
             rightCount = rightCount + 1
             return rightCount
         end
-
-        local contentScale = Instance.new("UIScale")
-        contentScale.Scale = 1
-        contentScale.Parent = columns
 
         local function ActivateTab()
             if Tab.Active then return end
@@ -1833,12 +1845,9 @@ function Library:CreateWindow(config)
                 end
             end
 
-            -- Show new tab with smooth scale-in
+            -- Show tab and refresh left/right layout
             container.Visible = true
-            contentScale.Scale = 0.97
-            TweenService:Create(contentScale, TweenInfo.new(0.28, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
-                Scale = 1
-            }):Play()
+            task.defer(updateCanvas)
 
             TweenService:Create(tabButton, TweenInfo.new(0.25, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
                 BackgroundTransparency = 0.55,
