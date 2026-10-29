@@ -1709,76 +1709,47 @@ function Library:CreateWindow(config)
 
         Tab.Button = tabButton
 
-        -- Content: two real columns side-by-side (left / right groupboxes)
-        local container = Create("ScrollingFrame", {
-            Name = name .. "_Content",
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            ScrollBarThickness = 4,
-            ScrollBarImageColor3 = Library.AccentColor,
-            BorderSizePixel = 0,
-            Visible = false,
-            ZIndex = 9,
-            Parent = ContentHolder,
-            ClipsDescendants = true,
-            ScrollingEnabled = true,
-            ElasticBehavior = Enum.ElasticBehavior.Never,
-            ScrollBarImageTransparency = 0.25,
-            Active = true,
-        })
+        -- Content: absolute LEFT / RIGHT columns (side by side)
+        local container = Instance.new("ScrollingFrame")
+        container.Name = name .. "_Content"
+        container.BackgroundTransparency = 1
+        container.Size = UDim2.fromScale(1, 1)
+        container.CanvasSize = UDim2.new(0, 0, 0, 0)
+        container.ScrollBarThickness = 4
+        container.ScrollBarImageColor3 = Library.AccentColor
+        container.BorderSizePixel = 0
+        container.Visible = false
+        container.ZIndex = 9
+        container.ClipsDescendants = true
+        container.ScrollingEnabled = true
+        container.ElasticBehavior = Enum.ElasticBehavior.Never
+        container.Active = true
+        container.Parent = ContentHolder
 
-        local columns = Create("Frame", {
-            Name = "Columns",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Parent = container,
-            ZIndex = 9,
-        })
-        local columnsLayout = Instance.new("UIListLayout")
-        columnsLayout.FillDirection = Enum.FillDirection.Horizontal
-        columnsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-        columnsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-        columnsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        columnsLayout.Padding = UDim.new(0, 10)
-        columnsLayout.Parent = columns
-        local columnsPad = Instance.new("UIPadding")
-        columnsPad.PaddingLeft = UDim.new(0, 4)
-        columnsPad.PaddingRight = UDim.new(0, 4)
-        columnsPad.PaddingTop = UDim.new(0, 4)
-        columnsPad.PaddingBottom = UDim.new(0, 8)
-        columnsPad.Parent = columns
+        local leftCol = Instance.new("Frame")
+        leftCol.Name = "LeftColumn"
+        leftCol.BackgroundTransparency = 1
+        leftCol.BorderSizePixel = 0
+        leftCol.Size = UDim2.new(0.5, -12, 1, 0)
+        leftCol.Position = UDim2.new(0, 6, 0, 6)
+        leftCol.ZIndex = 10
+        leftCol.Parent = container
 
-        -- LEFT column
-        local leftCol = Create("Frame", {
-            Name = "LeftColumn",
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0.5, -5, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 1,
-            Parent = columns,
-            ZIndex = 9,
-        })
         local leftList = Instance.new("UIListLayout")
         leftList.FillDirection = Enum.FillDirection.Vertical
         leftList.SortOrder = Enum.SortOrder.LayoutOrder
         leftList.Padding = UDim.new(0, 10)
         leftList.Parent = leftCol
 
-        -- RIGHT column
-        local rightCol = Create("Frame", {
-            Name = "RightColumn",
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0.5, -5, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 2,
-            Parent = columns,
-            ZIndex = 9,
-        })
+        local rightCol = Instance.new("Frame")
+        rightCol.Name = "RightColumn"
+        rightCol.BackgroundTransparency = 1
+        rightCol.BorderSizePixel = 0
+        rightCol.Size = UDim2.new(0.5, -12, 1, 0)
+        rightCol.Position = UDim2.new(0.5, 6, 0, 6)
+        rightCol.ZIndex = 10
+        rightCol.Parent = container
+
         local rightList = Instance.new("UIListLayout")
         rightList.FillDirection = Enum.FillDirection.Vertical
         rightList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1788,23 +1759,28 @@ function Library:CreateWindow(config)
         local leftCount, rightCount = 0, 0
 
         local function updateCanvas()
-            -- Keep canvas tall enough; width comes from the frame (AutomaticCanvasSize Y)
-            local h = math.max(leftList.AbsoluteContentSize.Y, rightList.AbsoluteContentSize.Y, 1) + 16
-            if container.AbsoluteSize.X > 0 then
-                -- force equal half widths in pixels (scale 0.5 can fail inside scrolling frames)
-                local half = math.floor((container.AbsoluteSize.X - 18) / 2)
-                leftCol.Size = UDim2.fromOffset(half, 0)
-                rightCol.Size = UDim2.fromOffset(half, 0)
-                leftCol.AutomaticSize = Enum.AutomaticSize.Y
-                rightCol.AutomaticSize = Enum.AutomaticSize.Y
-            end
-            container.CanvasSize = UDim2.fromOffset(0, h)
+            local w = container.AbsoluteSize.X
+            if w < 40 then w = ContentHolder.AbsoluteSize.X end
+            if w < 40 then w = 500 end
+
+            local half = math.floor((w - 18) / 2)
+            local lh = leftList.AbsoluteContentSize.Y + 8
+            local rh = rightList.AbsoluteContentSize.Y + 8
+            local h = math.max(lh, rh, 50)
+
+            leftCol.Size = UDim2.fromOffset(half, h)
+            leftCol.Position = UDim2.fromOffset(6, 6)
+            rightCol.Size = UDim2.fromOffset(half, h)
+            rightCol.Position = UDim2.fromOffset(6 + half + 6, 6)
+            container.CanvasSize = UDim2.fromOffset(0, h + 16)
         end
+
         leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         container:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCanvas)
         task.defer(updateCanvas)
-        task.delay(0.2, updateCanvas)
+        task.delay(0.15, updateCanvas)
+        task.delay(0.6, updateCanvas)
 
         Tab.Container = container
         Tab.LeftColumn = leftCol
