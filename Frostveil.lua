@@ -1159,6 +1159,8 @@ function Library:CreateWindow(config)
     })
     local bgTextures = {
         { Name = "Original", Id = "125296886011244" },
+        { Name = "Spongebob", Id = "113644467007667" },
+        { Name = "Money", Id = "123207755204057" },
         { Name = "Patrick", Id = "130152189846750" },
         { Name = "Pocoyo", Id = "134844262260089" },
         { Name = "The Thinker", Id = "71890428605210" },
