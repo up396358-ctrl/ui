@@ -904,7 +904,7 @@ function Library:CreateWindow(config)
         Size = UDim2.new(1, -16, 1, -52),
         Position = UDim2.fromOffset(8, 46),
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 3,
+        ScrollBarThickness = 0,
         ScrollBarImageColor3 = Library.AccentColor,
         BorderSizePixel = 0,
         ZIndex = 201,
@@ -1159,12 +1159,12 @@ function Library:CreateWindow(config)
     })
     local bgTextures = {
         { Name = "Original", Id = "125296886011244" },
-        { Name = "Spongebob", Id = "113644467007667" },
         { Name = "Money", Id = "123207755204057" },
-        { Name = "Patrick", Id = "98569609705523" },
-        { Name = "Pocoyo", Id = "75503978377990" },
+        { Name = "SpongeBob", Id = "113644467007667" },
+        { Name = "Patrick", Id = "130152189846750" },
+        { Name = "Pocoyo", Id = "134844262260089" },
         { Name = "The Thinker", Id = "71890428605210" },
-        { Name = "Hwz", Id = "139744518359531" },
+        { Name = "Hwz", Id = "134780559674403" },
         { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
         { Name = "100$", Id = "76496312144969" },
@@ -1384,7 +1384,7 @@ function Library:CreateWindow(config)
         ZIndex = 202,
         Parent = SettingsScroll,
     })
-    local effectOptions = { "Snow", "Cross", "Hearts", "Rain", "None" }
+    local effectOptions = { "Snow", "None" }
     local effectDrop = Create("TextButton", {
         BackgroundColor3 = Color3.fromRGB(20, 28, 42),
         BackgroundTransparency = 0.35,
@@ -1596,7 +1596,7 @@ function Library:CreateWindow(config)
         Parent = Outer,
         ZIndex = 8,
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 3,
+        ScrollBarThickness = 0,
         ScrollBarImageColor3 = Library.AccentColor,
         ScrollingEnabled = true,
         ElasticBehavior = Enum.ElasticBehavior.Never,
@@ -1620,9 +1620,9 @@ function Library:CreateWindow(config)
 
     -- Effects (snow + cross rain)
     Window.Snow = CreateSnowSystem(Outer, { MaxFlakes = 70 })
-    Window.CrossRain = CreateCrossRainSystem(Outer, { CrossCount = 26 })
-    Window.ChromeHearts = CreateChromeHeartsSystem(Outer, { HeartCount = 55 })
-    Window.Rain = CreateRainSystem(Outer, { DropCount = 60 })
+    Window.CrossRain = nil
+    Window.ChromeHearts = nil
+    Window.Rain = nil
     Window.ActiveEffect = "Snow"
 
     -- Dragging
@@ -1712,10 +1712,10 @@ function Library:CreateWindow(config)
             Name = name,
             BackgroundColor3 = Library.MainColor,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 36),
+            Size = UDim2.new(1, 0, 0, 40),
             Font = Enum.Font.GothamMedium,
             Text = name,
-            TextSize = 13,
+            TextSize = 16,
             TextColor3 = Library.FontColor,
             TextTransparency = 0.35,
             TextXAlignment = Enum.TextXAlignment.Left,
@@ -1728,8 +1728,8 @@ function Library:CreateWindow(config)
         Round(tabButton, 9)
         Padding(tabButton, 6, 6, 14, 8)
         local tabLimit = Instance.new("UITextSizeConstraint")
-        tabLimit.MaxTextSize = 13
-        tabLimit.MinTextSize = 9
+        tabLimit.MaxTextSize = 17
+        tabLimit.MinTextSize = 12
         tabLimit.Parent = tabButton
         local tabStroke = Stroke(tabButton, Library.OutlineColor, 1, 1)
 
@@ -1752,7 +1752,7 @@ function Library:CreateWindow(config)
         leftScroll.Size = UDim2.new(0.5, -8, 1, -8)
         leftScroll.Position = UDim2.new(0, 4, 0, 4)
         leftScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        leftScroll.ScrollBarThickness = 3
+        leftScroll.ScrollBarThickness = 0
         leftScroll.ScrollBarImageColor3 = Library.AccentColor
         leftScroll.ScrollingEnabled = true
         leftScroll.ElasticBehavior = Enum.ElasticBehavior.Never
@@ -1782,7 +1782,7 @@ function Library:CreateWindow(config)
         rightScroll.Size = UDim2.new(0.5, -8, 1, -8)
         rightScroll.Position = UDim2.new(0.5, 4, 0, 4)
         rightScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        rightScroll.ScrollBarThickness = 3
+        rightScroll.ScrollBarThickness = 0
         rightScroll.ScrollBarImageColor3 = Library.AccentColor
         rightScroll.ScrollingEnabled = true
         rightScroll.ElasticBehavior = Enum.ElasticBehavior.Never
@@ -2541,7 +2541,7 @@ function Library:CreateWindow(config)
                     BackgroundTransparency = 1,
                     Size = UDim2.fromScale(1, 1),
                     CanvasSize = UDim2.new(0, 0, 0, 0),
-                    ScrollBarThickness = 4,
+                    ScrollBarThickness = 0,
                     ScrollBarImageColor3 = Library.AccentColor,
                     BorderSizePixel = 0,
                     ZIndex = 501,
@@ -2877,12 +2877,60 @@ end
 Library.SaveManager = {}
 local SaveManager = Library.SaveManager
 
-SaveManager.Library = nil
+SaveManager.Library = Library
 SaveManager.Folder = "FrostveilConfigs"
-SaveManager.Ignore = {}
+SaveManager.Ignore = { ConfigName = true, ConfigList = true }
+SaveManager.AutoloadFile = "autoload.txt"
+
+local function ensureFolder(folder)
+    if isfolder and not isfolder(folder) and makefolder then
+        pcall(makefolder, folder)
+    end
+end
+
+local function serializeValue(v)
+    local t = typeof(v)
+    if t == "Color3" then
+        return { __type = "Color3", R = v.R, G = v.G, B = v.B }
+    elseif t == "EnumItem" then
+        return { __type = "EnumItem", EnumType = tostring(v.EnumType), Name = v.Name }
+    elseif t == "table" then
+        local out = {}
+        for k, val in pairs(v) do
+            out[tostring(k)] = serializeValue(val)
+        end
+        return out
+    end
+    return v
+end
+
+local function deserializeValue(v)
+    if type(v) ~= "table" then return v end
+    if v.__type == "Color3" then
+        return Color3.new(v.R or 1, v.G or 1, v.B or 1)
+    elseif v.__type == "EnumItem" then
+        local ok, enum = pcall(function()
+            return Enum[v.EnumType][v.Name]
+        end)
+        if ok then return enum end
+        return v
+    end
+    local out = {}
+    for k, val in pairs(v) do
+        out[k] = deserializeValue(val)
+    end
+    return out
+end
 
 function SaveManager:SetLibrary(lib)
-    self.Library = lib
+    self.Library = lib or Library
+end
+
+function SaveManager:SetFolder(folder)
+    if type(folder) == "string" and folder ~= "" then
+        self.Folder = folder
+    end
+    ensureFolder(self.Folder)
 end
 
 function SaveManager:SetIgnoreIndexes(list)
@@ -2892,89 +2940,271 @@ function SaveManager:SetIgnoreIndexes(list)
 end
 
 function SaveManager:GetConfigPath(name)
+    name = tostring(name or "default"):gsub("[^%w%-%_ ]", "")
+    if name == "" then name = "default" end
     return self.Folder .. "/" .. name .. ".json"
 end
 
+function SaveManager:RefreshConfigList()
+    local list = {}
+    ensureFolder(self.Folder)
+    if listfiles then
+        local ok, files = pcall(listfiles, self.Folder)
+        if ok and type(files) == "table" then
+            for _, path in ipairs(files) do
+                local name = tostring(path):match("([^/\\]+)%.json$")
+                if name then table.insert(list, name) end
+            end
+        end
+    end
+    table.sort(list)
+    if #list == 0 then list = { "default" } end
+    return list
+end
+
 function SaveManager:Save(name)
-    if not self.Library then return false, "No library" end
-    if not isfolder(self.Folder) then
-        makefolder(self.Folder)
-    end
-    local data = { Toggles = {}, Options = {} }
-    for idx, toggle in pairs(Toggles) do
-        if not self.Ignore[idx] then
-            data.Toggles[idx] = toggle.Value
+    name = tostring(name or "default")
+    if name == "" then name = "default" end
+    ensureFolder(self.Folder)
+
+    local togglesTbl = (getgenv and getgenv().Toggles) or Toggles or {}
+    local optionsTbl = (getgenv and getgenv().Options) or Options or {}
+
+    local data = {
+        Toggles = {},
+        Options = {},
+        Meta = { SavedAt = os.time(), Name = name },
+    }
+
+    for idx, toggle in pairs(togglesTbl) do
+        if not self.Ignore[idx] and type(toggle) == "table" and toggle.Value ~= nil then
+            data.Toggles[idx] = toggle.Value and true or false
         end
     end
-    for idx, option in pairs(Options) do
-        if not self.Ignore[idx] and option.Value ~= nil then
-            data.Options[idx] = option.Value
+    for idx, option in pairs(optionsTbl) do
+        if not self.Ignore[idx] and type(option) == "table" and option.Value ~= nil then
+            data.Options[idx] = serializeValue(option.Value)
         end
     end
-    local ok, encoded = pcall(HttpService.JSONEncode, HttpService, data)
+
+    local ok, encoded = pcall(function()
+        return HttpService:JSONEncode(data)
+    end)
     if not ok then return false, encoded end
-    writefile(self:GetConfigPath(name), encoded)
+
+    if not writefile then return false, "writefile not available" end
+    local wOk, wErr = pcall(writefile, self:GetConfigPath(name), encoded)
+    if not wOk then return false, wErr end
     return true
 end
 
 function SaveManager:Load(name)
-    if not self.Library then return false, "No library" end
+    name = tostring(name or "default")
     local path = self:GetConfigPath(name)
-    if not isfile(path) then return false, "File not found" end
+    if not isfile or not isfile(path) then return false, "Config not found: " .. name end
+
     local ok, data = pcall(function()
         return HttpService:JSONDecode(readfile(path))
     end)
     if not ok or type(data) ~= "table" then return false, "Decode failed" end
-    if data.Toggles then
+
+    local togglesTbl = (getgenv and getgenv().Toggles) or Toggles or {}
+    local optionsTbl = (getgenv and getgenv().Options) or Options or {}
+
+    if type(data.Toggles) == "table" then
         for idx, value in pairs(data.Toggles) do
-            if Toggles[idx] and Toggles[idx].SetValue then
-                Toggles[idx]:SetValue(value)
+            local tog = togglesTbl[idx]
+            if tog then
+                if type(tog.SetValue) == "function" then
+                    pcall(function() tog:SetValue(value and true or false) end)
+                else
+                    tog.Value = value and true or false
+                    if type(tog.Callback) == "function" then
+                        pcall(tog.Callback, tog.Value)
+                    end
+                end
             end
         end
     end
-    if data.Options then
+
+    if type(data.Options) == "table" then
         for idx, value in pairs(data.Options) do
-            if Options[idx] and Options[idx].SetValue then
-                Options[idx]:SetValue(value)
+            local opt = optionsTbl[idx]
+            if opt then
+                local decoded = deserializeValue(value)
+                if type(opt.SetValue) == "function" then
+                    pcall(function() opt:SetValue(decoded) end)
+                else
+                    opt.Value = decoded
+                    if type(opt.Callback) == "function" then
+                        pcall(opt.Callback, decoded)
+                    end
+                end
             end
         end
     end
     return true
+end
+
+function SaveManager:Delete(name)
+    name = tostring(name or "")
+    if name == "" then return false, "No name" end
+    local path = self:GetConfigPath(name)
+    if isfile and isfile(path) and delfile then
+        pcall(delfile, path)
+        return true
+    end
+    return false, "Could not delete"
+end
+
+function SaveManager:SetAutoload(name)
+    ensureFolder(self.Folder)
+    if writefile then
+        pcall(writefile, self.Folder .. "/" .. self.AutoloadFile, tostring(name or ""))
+    end
+end
+
+function SaveManager:GetAutoload()
+    local path = self.Folder .. "/" .. self.AutoloadFile
+    if isfile and isfile(path) and readfile then
+        local ok, content = pcall(readfile, path)
+        if ok and type(content) == "string" and content ~= "" then
+            return content:gsub("%s+$", "")
+        end
+    end
+    return nil
+end
+
+function SaveManager:LoadAutoloadConfig()
+    local name = self:GetAutoload()
+    if not name or name == "" then return false end
+    local ok, err = self:Load(name)
+    if ok and Library and Library.Notify then
+        Library:Notify("Autoloaded config: " .. name, 2)
+    end
+    return ok, err
 end
 
 function SaveManager:BuildConfigSection(tab)
     if not tab then return end
     local group = tab:AddLeftGroupbox("Configs")
     local configName = "default"
+    local selectedConfig = "default"
+
+    local list = self:RefreshConfigList()
+    selectedConfig = list[1] or "default"
+    configName = selectedConfig
+
+    group:AddDropdown("ConfigList", {
+        Text = "Saved Configs",
+        Values = list,
+        Default = 1,
+        Callback = function(v)
+            selectedConfig = v
+            configName = v
+            local inp = Options and Options.ConfigName
+            if inp then
+                if inp.SetValue then pcall(function() inp:SetValue(v) end)
+                else inp.Value = v end
+            end
+        end,
+    })
 
     group:AddInput("ConfigName", {
         Text = "Config Name",
-        Default = "default",
-        Placeholder = "name",
-        Callback = function(v) configName = v end,
+        Default = configName,
+        Placeholder = "my config",
+        Callback = function(v)
+            configName = tostring(v or "default")
+        end,
     })
+
     group:AddButton({
         Text = "Save Config",
         Func = function()
-            local ok, err = self:Save(configName)
+            local name = configName
+            if Options and Options.ConfigName and Options.ConfigName.Value then
+                name = tostring(Options.ConfigName.Value)
+            end
+            local ok, err = self:Save(name)
             if ok then
-                Library:Notify("Saved config: " .. configName, 2)
+                local refreshed = self:RefreshConfigList()
+                local dd = Options and Options.ConfigList
+                if dd and dd.SetValues then
+                    pcall(function() dd:SetValues(refreshed) end)
+                elseif dd then
+                    dd.Values = refreshed
+                end
+                Library:Notify("Saved config: " .. name, 2)
             else
                 Library:Notify("Save failed: " .. tostring(err), 3)
             end
         end,
     })
+
     group:AddButton({
         Text = "Load Config",
         Func = function()
-            local ok, err = self:Load(configName)
+            local name = selectedConfig or configName
+            local ok, err = self:Load(name)
             if ok then
-                Library:Notify("Loaded config: " .. configName, 2)
+                Library:Notify("Loaded config: " .. name, 2)
             else
                 Library:Notify("Load failed: " .. tostring(err), 3)
             end
         end,
     })
+
+    group:AddButton({
+        Text = "Refresh List",
+        Func = function()
+            local refreshed = self:RefreshConfigList()
+            local dd = Options and Options.ConfigList
+            if dd and dd.SetValues then
+                pcall(function() dd:SetValues(refreshed) end)
+            elseif dd then
+                dd.Values = refreshed
+            end
+            Library:Notify("Config list refreshed", 2)
+        end,
+    })
+
+    group:AddButton({
+        Text = "Delete Config",
+        Func = function()
+            local name = selectedConfig or configName
+            local ok, err = self:Delete(name)
+            if ok then
+                local refreshed = self:RefreshConfigList()
+                local dd = Options and Options.ConfigList
+                if dd and dd.SetValues then
+                    pcall(function() dd:SetValues(refreshed) end)
+                end
+                Library:Notify("Deleted: " .. name, 2)
+            else
+                Library:Notify("Delete failed: " .. tostring(err), 3)
+            end
+        end,
+    })
+
+    group:AddButton({
+        Text = "Set as Autoload",
+        Func = function()
+            local name = selectedConfig or configName
+            self:SetAutoload(name)
+            Library:Notify("Autoload set: " .. name, 2)
+        end,
+    })
+
+    group:AddButton({
+        Text = "Clear Autoload",
+        Func = function()
+            self:SetAutoload("")
+            Library:Notify("Autoload cleared", 2)
+        end,
+    })
+
+    group:AddLabel("Autoload runs next time you inject")
 end
 
 -- ══════════════════════════════════════════════════════════════════════════════
