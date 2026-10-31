@@ -1161,10 +1161,10 @@ function Library:CreateWindow(config)
         { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
-        { Name = "Patrick", Id = "98569609705523" },
-        { Name = "Pocoyo", Id = "75503978377990" },
+        { Name = "Patrick", Id = "130152189846750" },
+        { Name = "Pocoyo", Id = "134844262260089" },
         { Name = "The Thinker", Id = "71890428605210" },
-        { Name = "Hwz", Id = "139744518359531" },
+        { Name = "Hwz", Id = "134780559674403" },
         { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
         { Name = "100$", Id = "76496312144969" },
@@ -1311,7 +1311,7 @@ function Library:CreateWindow(config)
     })
 
     -- Effect enabled toggle (UI toggle style)
-    local effectOn = true
+    local effectOn = false
     local effectToggleRow = Create("Frame", {
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 0, 28),
@@ -1619,11 +1619,11 @@ function Library:CreateWindow(config)
     })
 
     -- Effects (snow + cross rain)
-    Window.Snow = CreateSnowSystem(Outer, { MaxFlakes = 70 })
+    Window.Snow = CreateSnowSystem(Outer, { MaxFlakes = 40 })
     Window.CrossRain = nil
     Window.ChromeHearts = nil
     Window.Rain = nil
-    Window.ActiveEffect = "Snow"
+    Window.ActiveEffect = "None"
 
     -- Dragging
     Library:MakeDraggable(Outer, 42)
@@ -6820,5 +6820,5 @@ function Library:_CreateColorPicker(parentBox, index, info, resizeFn)
     return ColorObject
 end
 
-print("[Frostveil] v2.0.0 loaded — full library ready")
+print("Hollowoodz is ready to enjoy!")
 return Library
