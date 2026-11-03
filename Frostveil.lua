@@ -2295,74 +2295,54 @@ function Library:CreateWindow(config)
                 return { Type = "Button", Instance = button }
             end
 
-            -- ── Label ─────────────────────────────────────────────────────
+                        -- ── Label ─────────────────────────────────────────────────────
             function Groupbox:AddLabel(text, doesWrap)
-                doesWrap = doesWrap and true or false
+                -- Always allow growth: wrap text and expand groupbox height
                 local label = Create("TextLabel", {
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -8, 0, doesWrap and 0 or 18),
-                    AutomaticSize = doesWrap and Enum.AutomaticSize.Y or Enum.AutomaticSize.None,
+                    Size = UDim2.new(1, -8, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.Y,
                     Font = Enum.Font.Gotham,
                     Text = tostring(text),
                     TextSize = 12,
                     TextColor3 = Color3.fromRGB(255, 255, 255),
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    TextYAlignment = Enum.TextYAlignment.Center,
-                    TextWrapped = doesWrap,
-                    TextTruncate = doesWrap and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
+                    TextYAlignment = Enum.TextYAlignment.Top,
+                    TextWrapped = true,
+                    TextTruncate = Enum.TextTruncate.None,
                     TextScaled = false,
-                    ClipsDescendants = true,
                     ZIndex = 11,
                     Parent = box,
                 })
-                -- Keep label text white + theme-linked
                 Library:AddToRegistry(label, { TextColor3 = "FontColor" })
-                -- Long single-line labels: shrink font slightly so more fits before ellipsis
-                if not doesWrap then
-                    local function fitLabel()
-                        local maxW = math.max(label.AbsoluteSize.X, 40)
-                        local size = 12
-                        label.TextSize = size
-                        label.TextScaled = false
-                        -- binary-ish shrink until text fits or min size
-                        while size > 9 do
-                            local bounds = label.TextBounds
-                            if bounds.X <= maxW - 2 then break end
-                            size -= 1
-                            label.TextSize = size
-                        end
-                        label.TextTruncate = Enum.TextTruncate.AtEnd
+
+                local function refresh()
+                    -- width is driven by parent; height grows with wrapped text
+                    ResizeBox()
+                    if Tab.UpdateCanvas then
+                        task.defer(Tab.UpdateCanvas)
                     end
-                    label:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                        task.defer(fitLabel)
-                    end)
-                    task.defer(fitLabel)
                 end
-                ResizeBox()
+
+                label:GetPropertyChangedSignal("TextBounds"):Connect(function()
+                    task.defer(refresh)
+                end)
+                label:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                    task.defer(refresh)
+                end)
+                task.defer(refresh)
+
                 local LabelObject = {
                     Type = "Label",
                     SetText = function(_, newText)
                         label.Text = tostring(newText)
-                        if not doesWrap then
-                            task.defer(function()
-                                local maxW = math.max(label.AbsoluteSize.X, 40)
-                                local size = 12
-                                label.TextSize = size
-                                while size > 9 do
-                                    if label.TextBounds.X <= maxW - 2 then break end
-                                    size -= 1
-                                    label.TextSize = size
-                                end
-                            end)
-                        end
-                        ResizeBox()
+                        task.defer(refresh)
                     end,
                 }
                 return LabelObject
             end
 
-            -- ── Divider ───────────────────────────────────────────────────
-            function Groupbox:AddDivider()
+function Groupbox:AddDivider()
                 Create("Frame", {
                     BackgroundColor3 = Library.OutlineColor,
                     BackgroundTransparency = 0.50,
