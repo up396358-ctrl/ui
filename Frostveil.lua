@@ -6842,5 +6842,6 @@ function Library:_CreateColorPicker(parentBox, index, info, resizeFn)
     return ColorObject
 end
 
-print("[Frostveil] v2.0.0 loaded — full library ready")
+print("Hollowoodz V2 has loaded")
+print("Hope you enjoy yn")
 return Library
