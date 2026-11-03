@@ -894,7 +894,7 @@ function Library:CreateWindow(config)
         Font = Enum.Font.GothamBold,
         Text = "×",
         TextSize = 20,
-        TextColor3 = Color3.fromRGB(175, 190, 215),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         ZIndex = 202,
         Parent = SettingsTop,
     })
@@ -929,7 +929,7 @@ function Library:CreateWindow(config)
             Font = Enum.Font.GothamMedium,
             Text = labelText,
             TextSize = 12,
-            TextColor3 = Color3.fromRGB(180, 200, 230),
+            TextColor3 = Color3.fromRGB(255, 255, 255),
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 203,
             Parent = row,
@@ -1049,7 +1049,7 @@ function Library:CreateWindow(config)
             Font = Enum.Font.Gotham,
             Text = "",
             TextSize = 11,
-            TextColor3 = Color3.fromRGB(160, 180, 210),
+            TextColor3 = Color3.fromRGB(255, 255, 255),
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 203,
             Parent = row,
@@ -1161,10 +1161,10 @@ function Library:CreateWindow(config)
         { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
-        { Name = "Patrick", Id = "130152189846750" },
-        { Name = "Pocoyo", Id = "134844262260089" },
+        { Name = "Patrick", Id = "98569609705523" },
+        { Name = "Pocoyo", Id = "75503978377990" },
         { Name = "The Thinker", Id = "71890428605210" },
-        { Name = "Hwz", Id = "134780559674403" },
+        { Name = "Hwz", Id = "139744518359531" },
         { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
         { Name = "100$", Id = "76496312144969" },
@@ -1379,7 +1379,7 @@ function Library:CreateWindow(config)
         Font = Enum.Font.Gotham,
         Text = "Effect Type",
         TextSize = 12,
-        TextColor3 = Color3.fromRGB(180, 200, 230),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 202,
         Parent = SettingsScroll,
@@ -1487,7 +1487,7 @@ function Library:CreateWindow(config)
         TweenService:Create(SettingsClose, TweenInfo.new(0.12), { TextColor3 = Library.RiskColor }):Play()
     end)
     SettingsClose.MouseLeave:Connect(function()
-        TweenService:Create(SettingsClose, TweenInfo.new(0.12), { TextColor3 = Color3.fromRGB(175, 190, 215) }):Play()
+        TweenService:Create(SettingsClose, TweenInfo.new(0.12), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
     end)
 
     Window.OpenSettings = openSettings
@@ -1502,7 +1502,7 @@ function Library:CreateWindow(config)
         Font = Enum.Font.GothamBold,
         Text = "⚙",
         TextSize = 16,
-        TextColor3 = Color3.fromRGB(175, 190, 215),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         ZIndex = 12,
         Parent = TopBar,
     })
@@ -1520,7 +1520,7 @@ function Library:CreateWindow(config)
     end)
     SettingsButton.MouseLeave:Connect(function()
         TweenService:Create(SettingsButton, TweenInfo.new(0.12), {
-            TextColor3 = Color3.fromRGB(175, 190, 215)
+            TextColor3 = Color3.fromRGB(255, 255, 255)
         }):Play()
     end)
 
@@ -1533,7 +1533,7 @@ function Library:CreateWindow(config)
         Font = Enum.Font.GothamBold,
         Text = "–",
         TextSize = 20,
-        TextColor3 = Color3.fromRGB(175, 190, 215),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         ZIndex = 12,
         Parent = TopBar,
     })
@@ -1547,7 +1547,7 @@ function Library:CreateWindow(config)
     end)
     MinButton.MouseLeave:Connect(function()
         TweenService:Create(MinButton, TweenInfo.new(0.12), {
-            TextColor3 = Color3.fromRGB(175, 190, 215)
+            TextColor3 = Color3.fromRGB(255, 255, 255)
         }):Play()
     end)
 
@@ -1560,7 +1560,7 @@ function Library:CreateWindow(config)
         Font = Enum.Font.GothamBold,
         Text = "×",
         TextSize = 22,
-        TextColor3 = Color3.fromRGB(175, 190, 215),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         ZIndex = 12,
         Parent = TopBar,
     })
@@ -1574,7 +1574,7 @@ function Library:CreateWindow(config)
     end)
     CloseButton.MouseLeave:Connect(function()
         TweenService:Create(CloseButton, TweenInfo.new(0.12), {
-            TextColor3 = Color3.fromRGB(175, 190, 215)
+            TextColor3 = Color3.fromRGB(255, 255, 255)
         }):Play()
     end)
 
@@ -1939,8 +1939,9 @@ function Library:CreateWindow(config)
                 Font = Enum.Font.GothamBold,
                 Text = titleText,
                 TextSize = 13,
-                TextColor3 = Library.FontColor,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
                 TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
                 TextScaled = true,
                 ZIndex = 12,
                 Parent = box,
@@ -2296,24 +2297,65 @@ function Library:CreateWindow(config)
 
             -- ── Label ─────────────────────────────────────────────────────
             function Groupbox:AddLabel(text, doesWrap)
+                doesWrap = doesWrap and true or false
                 local label = Create("TextLabel", {
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, doesWrap and 0 or 20),
+                    Size = UDim2.new(1, -8, 0, doesWrap and 0 or 18),
                     AutomaticSize = doesWrap and Enum.AutomaticSize.Y or Enum.AutomaticSize.None,
                     Font = Enum.Font.Gotham,
                     Text = tostring(text),
                     TextSize = 12,
-                    TextColor3 = Color3.fromRGB(155, 175, 205),
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    TextWrapped = doesWrap and true or false,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextWrapped = doesWrap,
+                    TextTruncate = doesWrap and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
+                    TextScaled = false,
+                    ClipsDescendants = true,
                     ZIndex = 11,
                     Parent = box,
                 })
+                -- Keep label text white + theme-linked
+                Library:AddToRegistry(label, { TextColor3 = "FontColor" })
+                -- Long single-line labels: shrink font slightly so more fits before ellipsis
+                if not doesWrap then
+                    local function fitLabel()
+                        local maxW = math.max(label.AbsoluteSize.X, 40)
+                        local size = 12
+                        label.TextSize = size
+                        label.TextScaled = false
+                        -- binary-ish shrink until text fits or min size
+                        while size > 9 do
+                            local bounds = label.TextBounds
+                            if bounds.X <= maxW - 2 then break end
+                            size -= 1
+                            label.TextSize = size
+                        end
+                        label.TextTruncate = Enum.TextTruncate.AtEnd
+                    end
+                    label:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                        task.defer(fitLabel)
+                    end)
+                    task.defer(fitLabel)
+                end
                 ResizeBox()
                 local LabelObject = {
                     Type = "Label",
                     SetText = function(_, newText)
                         label.Text = tostring(newText)
+                        if not doesWrap then
+                            task.defer(function()
+                                local maxW = math.max(label.AbsoluteSize.X, 40)
+                                local size = 12
+                                label.TextSize = size
+                                while size > 9 do
+                                    if label.TextBounds.X <= maxW - 2 then break end
+                                    size -= 1
+                                    label.TextSize = size
+                                end
+                            end)
+                        end
+                        ResizeBox()
                     end,
                 }
                 return LabelObject
@@ -6820,5 +6862,5 @@ function Library:_CreateColorPicker(parentBox, index, info, resizeFn)
     return ColorObject
 end
 
-print("Hollowoodz is ready to enjoy!")
+print("[Frostveil] v2.0.0 loaded — full library ready")
 return Library
