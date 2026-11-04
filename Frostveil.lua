@@ -3276,22 +3276,14 @@ function Library:SetWatermark(text)
     WatermarkFrame.Visible = true
 end
 
--- ══════════════════════════════════════════════════════════════════════════════
--- END OF LIBRARY — return for loadstring
--- ══════════════════════════════════════════════════════════════════════════════
-
-print("[Frostveil] v2.0.0 loaded")
 
 
--- ══════════════════════════════════════════════════════════════════════════════
--- EXTENDED DOCUMENTATION & API REFERENCE
--- (This section is documentation only — does not execute)
--- ══════════════════════════════════════════════════════════════════════════════
+print("Stop looking here go enjoy the script")
+
+
+
 
 --[[
-================================================================================
-FROSTVEIL COMPLETE API REFERENCE
-================================================================================
 
 Library:CreateWindow(config)
   config.Title                 string   Window title text
