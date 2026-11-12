@@ -729,6 +729,32 @@ function Library:CreateWindow(config)
     local tabPadding            = config.TabPadding or 4
     local menuFadeTime          = config.MenuFadeTime or 0.2
 
+    -- Mobile / small-screen detection
+    local function getViewport()
+        local cam = workspace.CurrentCamera
+        if cam then return cam.ViewportSize end
+        return Vector2.new(1280, 720)
+    end
+    local vp = getViewport()
+    local isMobile = (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
+        or (UserInputService.TouchEnabled and vp.X < 900)
+    if config.ForceMobile ~= nil then
+        isMobile = config.ForceMobile and true or false
+    end
+    Library.IsMobile = isMobile
+
+    -- Fit window to phone / tablet
+    if isMobile and not config.Size then
+        local w = math.clamp(math.floor(vp.X * 0.96), 300, 520)
+        local h = math.clamp(math.floor(vp.Y * 0.82), 360, 640)
+        size = UDim2.fromOffset(w, h)
+    elseif isMobile and config.Size then
+        -- still clamp user size so it never overflows the screen
+        local w = math.min(size.X.Offset > 0 and size.X.Offset or 700, math.floor(vp.X * 0.98))
+        local h = math.min(size.Y.Offset > 0 and size.Y.Offset or 500, math.floor(vp.Y * 0.88))
+        size = UDim2.fromOffset(math.max(280, w), math.max(320, h))
+    end
+
     local Window = {
         Tabs = {},
         TabCount = 0,
@@ -738,6 +764,7 @@ function Library:CreateWindow(config)
         BackgroundImageLabel = nil,
         Title = title,
         SearchIndex = {},
+        IsMobile = isMobile,
     }
 
     local function registerSearchItem(kind, text, tabObj, groupboxObj, focusInstance)
@@ -767,6 +794,50 @@ function Library:CreateWindow(config)
     })
     Round(Outer, 14)
     local outerStroke = Stroke(Outer, Library.AccentColor, 1.2, 0.50)
+
+    -- Mobile scale / live refit when rotating phone
+    local uiScale = Instance.new("UIScale")
+    uiScale.Scale = 1
+    uiScale.Parent = Outer
+    Window.UIScale = uiScale
+
+    local function applyMobileLayout()
+        local v = getViewport()
+        local mobileNow = (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
+            or (UserInputService.TouchEnabled and v.X < 900)
+        if config.ForceMobile ~= nil then
+            mobileNow = config.ForceMobile and true or false
+        end
+        Library.IsMobile = mobileNow
+        Window.IsMobile = mobileNow
+        if not mobileNow then
+            uiScale.Scale = 1
+            return
+        end
+        local targetW = math.clamp(math.floor(v.X * 0.96), 300, 520)
+        local targetH = math.clamp(math.floor(v.Y * 0.82), 360, 640)
+        Outer.Size = UDim2.fromOffset(targetW, targetH)
+        Outer.Position = UDim2.fromScale(0.5, 0.5)
+        Outer.AnchorPoint = Vector2.new(0.5, 0.5)
+        -- slight scale down on very small phones so controls don't overflow
+        if v.X < 380 then
+            uiScale.Scale = 0.92
+        else
+            uiScale.Scale = 1
+        end
+    end
+    Window.ApplyMobileLayout = applyMobileLayout
+    if isMobile then
+        task.defer(applyMobileLayout)
+    end
+    pcall(function()
+        local cam = workspace.CurrentCamera
+        if cam then
+            Library:GiveSignal(cam:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+                task.defer(applyMobileLayout)
+            end))
+        end
+    end)
     -- Soft outer glow ring
     local glow = Create("Frame", {
         Name = "Glow",
@@ -883,7 +954,7 @@ function Library:CreateWindow(config)
         BackgroundColor3 = Color3.fromRGB(12, 16, 24),
         BackgroundTransparency = 0.08,
         BorderSizePixel = 0,
-        Size = UDim2.fromOffset(320, 420),
+        Size = isMobile and UDim2.fromOffset(math.min(300, math.floor(vp.X * 0.92)), math.min(460, math.floor(vp.Y * 0.78))) or UDim2.fromOffset(320, 420),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         Visible = false,
@@ -1136,26 +1207,31 @@ function Library:CreateWindow(config)
 
         local draggingSV, draggingHue = false, false
         svBox.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 draggingSV = true
                 colorFromSV(Vector2.new(Mouse.X, Mouse.Y))
             end
         end)
         hueBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 draggingHue = true
                 colorFromHue(Vector2.new(Mouse.X, Mouse.Y))
             end
         end)
         Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
                 draggingSV, draggingHue = false, false
             end
         end))
         Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-            if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
-            if draggingSV then colorFromSV(Vector2.new(Mouse.X, Mouse.Y)) end
-            if draggingHue then colorFromHue(Vector2.new(Mouse.X, Mouse.Y)) end
+            if input.UserInputType ~= Enum.UserInputType.MouseMovement
+                and input.UserInputType ~= Enum.UserInputType.Touch then
+                return
+            end
+            local pos = input.Position and Vector2.new(input.Position.X, input.Position.Y) or Vector2.new(Mouse.X, Mouse.Y)
+            if draggingSV then colorFromSV(pos) end
+            if draggingHue then colorFromHue(pos) end
         end))
 
         applyColor(h, s, v)
@@ -1534,8 +1610,8 @@ function Library:CreateWindow(config)
         BackgroundColor3 = Color3.fromRGB(12, 16, 24),
         BackgroundTransparency = 0.15,
         BorderSizePixel = 0,
-        Size = UDim2.fromOffset(168, 26),
-        Position = UDim2.new(1, -290, 0.5, -13),
+        Size = UDim2.fromOffset(isMobile and 120 or 168, isMobile and 28 or 26),
+        Position = UDim2.new(1, isMobile and -240 or -290, 0.5, isMobile and -14 or -13),
         Font = Enum.Font.Gotham,
         Text = "",
         PlaceholderText = "Search menu...",
@@ -1777,17 +1853,18 @@ function Library:CreateWindow(config)
     end
 
     -- Sidebar (scrollable tab list)
+    local sidebarWidth = isMobile and 112 or 158
     local Sidebar = Create("ScrollingFrame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        Size = UDim2.new(0, 158, 1, -44),
+        Size = UDim2.new(0, sidebarWidth, 1, -44),
         Position = UDim2.fromOffset(0, 44),
         Parent = Outer,
         ZIndex = 8,
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 0,
+        ScrollBarThickness = isMobile and 3 or 0,
         ScrollBarImageColor3 = Library.AccentColor,
         ScrollingEnabled = true,
         ElasticBehavior = Enum.ElasticBehavior.Never,
@@ -1795,15 +1872,16 @@ function Library:CreateWindow(config)
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     Library:AddToRegistry(Sidebar, { BackgroundColor3 = "SidebarColor" })
-    ListLayout(Sidebar, 6)
-    Padding(Sidebar, 16, 14, 12, 12)
+    ListLayout(Sidebar, isMobile and 4 or 6)
+    Padding(Sidebar, isMobile and 10 or 16, 14, isMobile and 8 or 12, isMobile and 8 or 12)
 
     -- Content holder
+    local contentPad = sidebarWidth + 10
     local ContentHolder = Create("Frame", {
         Name = "ContentHolder",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -172, 1, -58),
-        Position = UDim2.fromOffset(168, 54),
+        Size = UDim2.new(1, -(contentPad + 6), 1, -58),
+        Position = UDim2.fromOffset(contentPad, 54),
         Parent = Outer,
         ZIndex = 8,
         ClipsDescendants = true,
@@ -1943,7 +2021,7 @@ function Library:CreateWindow(config)
         leftScroll.Size = UDim2.new(0.5, -8, 1, -8)
         leftScroll.Position = UDim2.new(0, 4, 0, 4)
         leftScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        leftScroll.ScrollBarThickness = 0
+        leftScroll.ScrollBarThickness = isMobile and 4 or 0
         leftScroll.ScrollBarImageColor3 = Library.AccentColor
         leftScroll.ScrollingEnabled = true
         leftScroll.ElasticBehavior = Enum.ElasticBehavior.Never
@@ -1973,7 +2051,7 @@ function Library:CreateWindow(config)
         rightScroll.Size = UDim2.new(0.5, -8, 1, -8)
         rightScroll.Position = UDim2.new(0.5, 4, 0, 4)
         rightScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        rightScroll.ScrollBarThickness = 0
+        rightScroll.ScrollBarThickness = isMobile and 4 or 0
         rightScroll.ScrollBarImageColor3 = Library.AccentColor
         rightScroll.ScrollingEnabled = true
         rightScroll.ElasticBehavior = Enum.ElasticBehavior.Never
@@ -2202,8 +2280,8 @@ function Library:CreateWindow(config)
                 local track = Create("Frame", {
                     BackgroundColor3 = Library.ToggleOffColor,
                     BorderSizePixel = 0,
-                    Size = UDim2.fromOffset(44, 24),
-                    Position = UDim2.new(1, -44, 0.5, -12),
+                    Size = UDim2.fromOffset(isMobile and 48 or 44, isMobile and 28 or 24),
+                    Position = UDim2.new(1, isMobile and -48 or -44, 0.5, isMobile and -14 or -12),
                     ZIndex = 12,
                     Parent = holder,
                 })
@@ -2395,26 +2473,33 @@ function Library:CreateWindow(config)
                 end
 
                 local draggingSlider = false
+                local function sliderPosX(input)
+                    if input.Position then return input.Position.X end
+                    return Mouse.X
+                end
+                local function isPress(input)
+                    return input.UserInputType == Enum.UserInputType.MouseButton1
+                        or input.UserInputType == Enum.UserInputType.Touch
+                end
+                local function isMove(input)
+                    return input.UserInputType == Enum.UserInputType.MouseMovement
+                        or input.UserInputType == Enum.UserInputType.Touch
+                end
                 barBackground.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingSlider = true
-                        local relative = (Mouse.X - barBackground.AbsolutePosition.X) / barBackground.AbsoluteSize.X
-                        SetValue(min + (max - min) * math.clamp(relative, 0, 1))
-                    end
+                    if not isPress(input) then return end
+                    draggingSlider = true
+                    local relative = (sliderPosX(input) - barBackground.AbsolutePosition.X) / math.max(barBackground.AbsoluteSize.X, 1)
+                    SetValue(min + (max - min) * math.clamp(relative, 0, 1))
                 end)
                 knob.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingSlider = true
-                    end
+                    if isPress(input) then draggingSlider = true end
                 end)
                 Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingSlider = false
-                    end
+                    if isPress(input) then draggingSlider = false end
                 end))
                 Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-                    if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
-                        local relative = (Mouse.X - barBackground.AbsolutePosition.X) / barBackground.AbsoluteSize.X
+                    if draggingSlider and isMove(input) then
+                        local relative = (sliderPosX(input) - barBackground.AbsolutePosition.X) / math.max(barBackground.AbsoluteSize.X, 1)
                         SetValue(min + (max - min) * math.clamp(relative, 0, 1))
                     end
                 end))
