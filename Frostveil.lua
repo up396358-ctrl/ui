@@ -1960,7 +1960,7 @@ function Library:CreateWindow(config)
 
 
 
-    -- ════════════════════════════════════════════════════════════════════════
+        -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
@@ -2090,7 +2090,7 @@ function Library:CreateWindow(config)
                                 SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
                             end
                         end)
-                        refreshLockFloat()
+                        Window.RefreshLockFloat() -- Call via Window scope
                     end
                 end
             end
@@ -2126,7 +2126,8 @@ function Library:CreateWindow(config)
             ToggleText.Text = Outer.Visible and "Close UI" or "Open UI"
         end
 
-        function refreshLockFloat()
+        -- Store in Window so it can be accessed outside this scope
+        Window.RefreshLockFloat = function()
             if Window.DragLocked then
                 LockText.Text = "Unlock UI"
                 TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.RiskColor }):Play()
@@ -2156,8 +2157,9 @@ function Library:CreateWindow(config)
         end
 
         refreshToggleFloat()
-        refreshLockFloat()
+        Window.RefreshLockFloat()
     end
+    
     
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
