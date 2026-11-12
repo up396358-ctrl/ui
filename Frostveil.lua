@@ -2810,18 +2810,9 @@ function Groupbox:AddDivider()
     if autoShow then
         task.defer(function()
             Window:Show()
-            -- verse loading screen covers the UI window only
+            task.wait(0.2) -- let UI layout so Outer is 700x500 not 0
             pcall(function()
                 Library:ShowLoadingScreen({ Duration = 10, Parent = Outer })
-            end)
-        end)
-    else
-        -- if not auto-shown, still attach for when they show later
-        task.defer(function()
-            pcall(function()
-                if Outer and Outer.Visible then
-                    Library:ShowLoadingScreen({ Duration = 10, Parent = Outer })
-                end
             end)
         end)
     end
@@ -6925,9 +6916,8 @@ local VERSES = {
 function Library:ShowLoadingScreen(opts)
     opts = opts or {}
     local duration = tonumber(opts.Duration) or 10
-    local parentFrame = opts.Parent -- should be the window Outer
+    local parentFrame = opts.Parent
 
-    -- Prefer the active window holder so we only cover the UI
     if not parentFrame or not parentFrame.Parent then
         for _, win in ipairs(self.Windows or {}) do
             if win.Holder and win.Holder.Parent then
@@ -6937,7 +6927,17 @@ function Library:ShowLoadingScreen(opts)
         end
     end
     if not parentFrame or not parentFrame.Parent then
-        return nil -- UI not ready
+        return nil
+    end
+
+    -- Wait until the window has a real pixel size (not full-screen fallback)
+    local abs = parentFrame.AbsoluteSize
+    if abs.X < 50 or abs.Y < 50 then
+        task.wait(0.15)
+        abs = parentFrame.AbsoluteSize
+    end
+    if abs.X < 50 or abs.Y < 50 then
+        abs = Vector2.new(700, 500)
     end
 
     local bg = self.BackgroundColor or Color3.fromRGB(7, 9, 14)
@@ -6948,42 +6948,50 @@ function Library:ShowLoadingScreen(opts)
     local verse = VERSES[math.random(1, #VERSES)]
     local ref, txt = verse[1], verse[2]
 
-    -- remove previous overlay on this window
     local old = parentFrame:FindFirstChild("FrostveilVerseOverlay")
     if old then old:Destroy() end
 
-    -- Full cover of the UI window only
+    -- Ensure we only draw inside the window bounds
+    parentFrame.ClipsDescendants = true
+
     local overlay = Instance.new("Frame")
     overlay.Name = "FrostveilVerseOverlay"
+    -- Use scale 1,1 relative to Outer (window) — never a new ScreenGui
     overlay.Size = UDim2.fromScale(1, 1)
     overlay.Position = UDim2.fromScale(0, 0)
+    overlay.AnchorPoint = Vector2.new(0, 0)
     overlay.BackgroundColor3 = bg
     overlay.BackgroundTransparency = 0
     overlay.BorderSizePixel = 0
-    overlay.ZIndex = 200
+    overlay.ZIndex = 250
     overlay.Active = true
     overlay.ClipsDescendants = true
     overlay.Parent = parentFrame
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 14)
-    corner.Parent = overlay
+    local oCorner = Instance.new("UICorner")
+    oCorner.CornerRadius = UDim.new(0, 14)
+    oCorner.Parent = overlay
 
-    -- Card centered inside the UI
+    local oStroke = Instance.new("UIStroke")
+    oStroke.Color = accent
+    oStroke.Thickness = 1.2
+    oStroke.Transparency = 0.4
+    oStroke.Parent = overlay
+
     local card = Instance.new("Frame")
     card.Name = "Card"
     card.AnchorPoint = Vector2.new(0.5, 0.5)
     card.Position = UDim2.fromScale(0.5, 0.5)
-    card.Size = UDim2.new(0.88, 0, 0, 200)
+    card.Size = UDim2.new(0.9, 0, 0, math.clamp(math.floor(abs.Y * 0.42), 160, 220))
     card.BackgroundColor3 = main
     card.BackgroundTransparency = 0
     card.BorderSizePixel = 0
-    card.ZIndex = 201
+    card.ZIndex = 251
     card.Parent = overlay
 
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 10)
-    cardCorner.Parent = card
+    local cCorner = Instance.new("UICorner")
+    cCorner.CornerRadius = UDim.new(0, 10)
+    cCorner.Parent = card
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = accent
@@ -6992,10 +7000,10 @@ function Library:ShowLoadingScreen(opts)
     stroke.Parent = card
 
     local pad = Instance.new("UIPadding")
-    pad.PaddingTop = UDim.new(0, 28)
-    pad.PaddingBottom = UDim.new(0, 28)
-    pad.PaddingLeft = UDim.new(0, 28)
-    pad.PaddingRight = UDim.new(0, 28)
+    pad.PaddingTop = UDim.new(0, 24)
+    pad.PaddingBottom = UDim.new(0, 24)
+    pad.PaddingLeft = UDim.new(0, 24)
+    pad.PaddingRight = UDim.new(0, 24)
     pad.Parent = card
 
     local line = Instance.new("Frame")
@@ -7003,46 +7011,47 @@ function Library:ShowLoadingScreen(opts)
     line.BackgroundColor3 = accent
     line.BackgroundTransparency = 0.2
     line.BorderSizePixel = 0
-    line.ZIndex = 202
+    line.ZIndex = 252
     line.Parent = card
 
     local refLabel = Instance.new("TextLabel")
-    refLabel.Size = UDim2.new(1, 0, 0, 24)
-    refLabel.Position = UDim2.fromOffset(0, 14)
+    refLabel.Size = UDim2.new(1, 0, 0, 22)
+    refLabel.Position = UDim2.fromOffset(0, 12)
     refLabel.BackgroundTransparency = 1
     refLabel.Font = Enum.Font.GothamBold
-    refLabel.TextSize = 16
+    refLabel.TextSize = 15
     refLabel.TextColor3 = accent
     refLabel.TextXAlignment = Enum.TextXAlignment.Left
     refLabel.Text = "Daily Bible Verse  ·  " .. tostring(ref)
-    refLabel.ZIndex = 202
+    refLabel.ZIndex = 252
     refLabel.Parent = card
 
     local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 1, -50)
-    textLabel.Position = UDim2.fromOffset(0, 48)
+    textLabel.Size = UDim2.new(1, 0, 1, -46)
+    textLabel.Position = UDim2.fromOffset(0, 42)
     textLabel.BackgroundTransparency = 1
     textLabel.Font = Enum.Font.Gotham
-    textLabel.TextSize = 15
+    textLabel.TextSize = 14
     textLabel.TextColor3 = fontCol
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
     textLabel.TextYAlignment = Enum.TextYAlignment.Top
     textLabel.TextWrapped = true
     textLabel.Text = '"' .. tostring(txt) .. '"'
-    textLabel.ZIndex = 202
+    textLabel.ZIndex = 252
     textLabel.Parent = card
 
     task.delay(duration, function()
         if not overlay.Parent then return end
         pcall(function()
-            TweenService:Create(overlay, TweenInfo.new(0.55), { BackgroundTransparency = 1 }):Play()
-            TweenService:Create(card, TweenInfo.new(0.55), { BackgroundTransparency = 1 }):Play()
-            TweenService:Create(stroke, TweenInfo.new(0.45), { Transparency = 1 }):Play()
-            TweenService:Create(refLabel, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
-            TweenService:Create(textLabel, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
-            TweenService:Create(line, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(overlay, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(card, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(stroke, TweenInfo.new(0.4), { Transparency = 1 }):Play()
+            TweenService:Create(oStroke, TweenInfo.new(0.4), { Transparency = 1 }):Play()
+            TweenService:Create(refLabel, TweenInfo.new(0.35), { TextTransparency = 1 }):Play()
+            TweenService:Create(textLabel, TweenInfo.new(0.35), { TextTransparency = 1 }):Play()
+            TweenService:Create(line, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
         end)
-        task.wait(0.6)
+        task.wait(0.55)
         pcall(function() overlay:Destroy() end)
     end)
 
