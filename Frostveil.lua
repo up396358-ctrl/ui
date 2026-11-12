@@ -6961,10 +6961,10 @@ function Library:ShowLoadingScreen(opts)
     overlay.Size = UDim2.fromScale(1, 1)
     overlay.Position = UDim2.fromScale(0, 0)
     overlay.BackgroundColor3 = bg
-    overlay.BackgroundTransparency = 1
+    overlay.BackgroundTransparency = 0 -- solid immediately
     overlay.BorderSizePixel = 0
     overlay.ZIndex = 100
-    overlay.Active = true -- block clicks to UI underneath
+    overlay.Active = true
     overlay.Parent = gui
 
     -- Card
@@ -6974,7 +6974,7 @@ function Library:ShowLoadingScreen(opts)
     card.Position = UDim2.fromScale(0.5, 0.5)
     card.Size = UDim2.fromOffset(620, 280)
     card.BackgroundColor3 = main
-    card.BackgroundTransparency = 1
+    card.BackgroundTransparency = 0.15
     card.BorderSizePixel = 0
     card.ZIndex = 110
     card.Parent = gui
@@ -7074,28 +7074,31 @@ function Library:ShowLoadingScreen(opts)
     return gui
 end
 
--- Auto-show once when the library is first required (covers whole UI)
-task.defer(function()
-    pcall(function()
-        if getgenv()._FrostveilVerseShown then return end
-        getgenv()._FrostveilVerseShown = true
-        if Library and type(Library.ShowLoadingScreen) == "function" then
-            -- hide main menu while verse is up
-            local wasVisible = true
-            pcall(function()
-                if ScreenGui then
-                    wasVisible = ScreenGui.Enabled
-                    ScreenGui.Enabled = false
-                end
-            end)
-            Library:ShowLoadingScreen({ Duration = 12 })
-            task.delay(12.9, function()
-                pcall(function()
-                    if ScreenGui then ScreenGui.Enabled = wasVisible end
-                end)
-            end)
+-- Always show verse loading screen when library is injected
+task.spawn(function()
+    task.wait(0.05)
+    local ok, err = pcall(function()
+        -- hide main menu while verse is up
+        local wasEnabled = true
+        if ScreenGui then
+            wasEnabled = ScreenGui.Enabled
+            ScreenGui.Enabled = false
         end
+        if Library and Library.ShowLoadingScreen then
+            Library:ShowLoadingScreen({ Duration = 12 })
+        end
+        task.delay(12.9, function()
+            if ScreenGui then
+                ScreenGui.Enabled = wasEnabled
+            end
+        end)
     end)
+    if not ok then
+        warn("[Frostveil] Loading screen error:", err)
+        pcall(function()
+            if ScreenGui then ScreenGui.Enabled = true end
+        end)
+    end
 end)
 
 print("[Frostveil] v2.0.0 loaded — full library ready")
