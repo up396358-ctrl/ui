@@ -2582,17 +2582,19 @@ function Groupbox:AddDivider()
                 })
 
                 if text and text ~= "" then
-                    Create("TextLabel", {
+                    local inputTitle = Create("TextLabel", {
                         BackgroundTransparency = 1,
                         Size = UDim2.new(1, 0, 0, 18),
                         Font = Enum.Font.Gotham,
                         Text = text,
                         TextSize = 13,
-                        TextColor3 = Library.FontColor,
+                        TextColor3 = Library.ElementTextColor,
                         TextXAlignment = Enum.TextXAlignment.Left,
+                        TextTruncate = Enum.TextTruncate.AtEnd,
                         ZIndex = 12,
                         Parent = holder,
                     })
+                    Library:AddToRegistry(inputTitle, { TextColor3 = "ElementTextColor" })
                 end
 
                 local boxFrame = Create("Frame", {
@@ -2615,12 +2617,14 @@ function Groupbox:AddDivider()
                     PlaceholderText = placeholder,
                     PlaceholderColor3 = Color3.fromRGB(100, 120, 150),
                     TextSize = 13,
-                    TextColor3 = Library.FontColor,
+                    TextColor3 = Library.ElementTextColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     ClearTextOnFocus = false,
                     ZIndex = 13,
                     Parent = boxFrame,
                 })
+                Library:AddToRegistry(textBox, { TextColor3 = "ElementTextColor" })
+                registerSearchItem("Input", text, Tab, Groupbox, holder)
 
                 local InputObject = {
                     Type = "Input",
@@ -2839,13 +2843,15 @@ function Groupbox:AddDivider()
                             Font = Enum.Font.Gotham,
                             Text = "  " .. tostring(value),
                             TextSize = 13,
-                            TextColor3 = Library.FontColor,
+                            TextColor3 = Library.ElementTextColor,
                             TextXAlignment = Enum.TextXAlignment.Left,
                             TextScaled = true,
+                            TextTruncate = Enum.TextTruncate.AtEnd,
                             AutoButtonColor = false,
                             ZIndex = 502,
                             Parent = listScroll,
                         })
+                        Library:AddToRegistry(optionBtn, { TextColor3 = "ElementTextColor" })
                         local oLimit = Instance.new("UITextSizeConstraint")
                         oLimit.MaxTextSize = 13
                         oLimit.MinTextSize = 11
@@ -2979,6 +2985,14 @@ function Groupbox:AddDivider()
                 Options[index] = DropdownObject
                 ResizeBox()
                 return DropdownObject
+            end
+
+
+            function Groupbox:AddColorPicker(index, info)
+                return Library:_CreateColorPicker(box, index, info, ResizeBox)
+            end
+            function Groupbox:AddKeyPicker(index, info)
+                return Library:_CreateKeyPicker(box, index, info, ResizeBox)
             end
 
             -- ── Blank (spacing) ───────────────────────────────────────────
@@ -7004,17 +7018,19 @@ function Library:_CreateColorPicker(parentBox, index, info, resizeFn)
         Parent = parentBox,
     })
 
-    Create("TextLabel", {
+    local cpLabel = Create("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(1, -40, 1, 0),
         Font = Enum.Font.Gotham,
         Text = text,
         TextSize = 13,
-        TextColor3 = Library.FontColor,
+        TextColor3 = Library.ElementTextColor,
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
         ZIndex = 12,
         Parent = holder,
     })
+    Library:AddToRegistry(cpLabel, { TextColor3 = "ElementTextColor" })
 
     local swatch = Create("TextButton", {
         BackgroundColor3 = default,
