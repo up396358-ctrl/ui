@@ -6912,29 +6912,26 @@ local VERSES = {
 function Library:ShowLoadingScreen(opts)
     opts = opts or {}
     local duration = tonumber(opts.Duration) or 12
-    local fadeIn = tonumber(opts.FadeIn) or 0.75
-    local fadeOut = tonumber(opts.FadeOut) or 0.9
 
     local bg = self.BackgroundColor or Color3.fromRGB(7, 9, 14)
     local main = self.MainColor or Color3.fromRGB(16, 20, 32)
     local accent = self.AccentColor or Color3.fromRGB(100, 210, 255)
     local fontCol = self.FontColor or Color3.fromRGB(255, 255, 255)
-    local outline = self.OutlineColor or Color3.fromRGB(48, 78, 120)
 
-    local rng = Random.new(tick() * 1000 + (LocalPlayer and LocalPlayer.UserId or 0))
-    local verse = VERSES[rng:NextInteger(1, #VERSES)]
+    local verse = VERSES[math.random(1, #VERSES)]
     local ref, txt = verse[1], verse[2]
 
-    local parentGui = CoreGui
-    pcall(function() if gethui then parentGui = gethui() end end)
-
-    local old = parentGui:FindFirstChild("FrostveilLoadingVerse")
-    if old then old:Destroy() end
+    -- destroy old
+    pcall(function()
+        local hui = (gethui and gethui()) or CoreGui
+        local old = hui:FindFirstChild("FrostveilLoadingVerse")
+        if old then old:Destroy() end
+    end)
     pcall(function()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
         if pg then
-            local o2 = pg:FindFirstChild("FrostveilLoadingVerse")
-            if o2 then o2:Destroy() end
+            local old = pg:FindFirstChild("FrostveilLoadingVerse")
+            if old then old:Destroy() end
         end
     end)
 
@@ -6944,62 +6941,59 @@ function Library:ShowLoadingScreen(opts)
     gui.IgnoreGuiInset = true
     gui.DisplayOrder = 2147483647
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    if type(ProtectAndParent) == "function" then
-        ProtectAndParent(gui)
-    else
+    gui.Enabled = true
+
+    -- parent (try every option)
+    local parented = false
+    pcall(function()
+        if gethui then gui.Parent = gethui() parented = true end
+    end)
+    if not parented then
+        pcall(function() gui.Parent = CoreGui parented = true end)
+    end
+    if not parented then
         pcall(function()
-            if gethui then gui.Parent = gethui() else gui.Parent = game:GetService("CoreGui") end
+            gui.Parent = LocalPlayer:WaitForChild("PlayerGui", 2)
+            parented = true
         end)
-        if not gui.Parent then
-            pcall(function() gui.Parent = LocalPlayer:WaitForChild("PlayerGui") end)
-        end
+    end
+    if not gui.Parent then
+        warn("[Frostveil] Loading screen could not parent")
+        return nil
     end
 
-    -- Full-screen cover (hides entire menu behind it)
+    -- FULL SCREEN solid background
     local overlay = Instance.new("Frame")
     overlay.Name = "Overlay"
     overlay.Size = UDim2.fromScale(1, 1)
     overlay.Position = UDim2.fromScale(0, 0)
-    overlay.BackgroundColor3 = bg
-    overlay.BackgroundTransparency = 0 -- solid immediately
     overlay.BorderSizePixel = 0
-    overlay.ZIndex = 100
+    overlay.BackgroundColor3 = bg
+    overlay.BackgroundTransparency = 0
+    overlay.ZIndex = 1
     overlay.Active = true
     overlay.Parent = gui
 
-    -- Card
+    -- Center card
     local card = Instance.new("Frame")
-    card.Name = "VerseCard"
+    card.Name = "Card"
     card.AnchorPoint = Vector2.new(0.5, 0.5)
     card.Position = UDim2.fromScale(0.5, 0.5)
     card.Size = UDim2.fromOffset(620, 280)
     card.BackgroundColor3 = main
-    card.BackgroundTransparency = 0.15
+    card.BackgroundTransparency = 0
     card.BorderSizePixel = 0
-    card.ZIndex = 110
+    card.ZIndex = 2
     card.Parent = gui
-    do
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 12)
-        corner.Parent = card
-    end
 
-    local grad = Instance.new("UIGradient")
-    grad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(
-            math.min(255, math.floor(main.R * 255 + 8)),
-            math.min(255, math.floor(main.G * 255 + 10)),
-            math.min(255, math.floor(main.B * 255 + 14))
-        )),
-        ColorSequenceKeypoint.new(1, bg),
-    })
-    grad.Rotation = 90
-    grad.Parent = card
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = card
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = accent
-    stroke.Thickness = 1.4
-    stroke.Transparency = 1
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.35
     stroke.Parent = card
 
     local pad = Instance.new("UIPadding")
@@ -7009,98 +7003,79 @@ function Library:ShowLoadingScreen(opts)
     pad.PaddingRight = UDim.new(0, 44)
     pad.Parent = card
 
-    -- Accent top line
-    local accentLine = Instance.new("Frame")
-    accentLine.Size = UDim2.new(1, 0, 0, 2)
-    accentLine.Position = UDim2.fromOffset(0, 0)
-    accentLine.BackgroundColor3 = accent
-    accentLine.BackgroundTransparency = 1
-    accentLine.BorderSizePixel = 0
-    accentLine.Parent = card
+    local line = Instance.new("Frame")
+    line.Size = UDim2.new(1, 0, 0, 2)
+    line.BackgroundColor3 = accent
+    line.BackgroundTransparency = 0.2
+    line.BorderSizePixel = 0
+    line.ZIndex = 3
+    line.Parent = card
 
     local refLabel = Instance.new("TextLabel")
-    refLabel.Name = "Reference"
     refLabel.Size = UDim2.new(1, 0, 0, 28)
     refLabel.Position = UDim2.fromOffset(0, 18)
     refLabel.BackgroundTransparency = 1
     refLabel.Font = Enum.Font.GothamBold
     refLabel.TextSize = 20
-    refLabel.TextColor3 = Color3.fromRGB(
-        math.min(255, math.floor(accent.R * 255 * 0.85 + 40)),
-        math.min(255, math.floor(accent.G * 255 * 0.85 + 40)),
-        math.min(255, math.floor(accent.B * 255 * 0.85 + 40))
-    )
+    refLabel.TextColor3 = accent
     refLabel.TextXAlignment = Enum.TextXAlignment.Left
     refLabel.Text = "Daily Bible Verse  ·  " .. tostring(ref)
-    refLabel.TextTransparency = 1
+    refLabel.ZIndex = 3
     refLabel.Parent = card
 
     local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "VerseText"
     textLabel.Size = UDim2.new(1, 0, 1, -70)
     textLabel.Position = UDim2.fromOffset(0, 58)
     textLabel.BackgroundTransparency = 1
     textLabel.Font = Enum.Font.Gotham
     textLabel.TextSize = 22
-    textLabel.LineHeight = 1.28
     textLabel.TextColor3 = fontCol
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
     textLabel.TextYAlignment = Enum.TextYAlignment.Top
     textLabel.TextWrapped = true
-    textLabel.Text = "“" .. tostring(txt) .. "”"
-    textLabel.TextTransparency = 1
+    textLabel.Text = '"' .. tostring(txt) .. '"'
+    textLabel.ZIndex = 3
     textLabel.Parent = card
 
-    -- Fade in — solid full-screen cover so menu is fully hidden
-    TweenService:Create(overlay, TweenInfo.new(fadeIn), { BackgroundTransparency = 0 }):Play()
-    TweenService:Create(card, TweenInfo.new(fadeIn), { BackgroundTransparency = 0 }):Play()
-    TweenService:Create(stroke, TweenInfo.new(fadeIn), { Transparency = 0.45 }):Play()
-    TweenService:Create(accentLine, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.25 }):Play()
-    TweenService:Create(refLabel, TweenInfo.new(fadeIn + 0.1), { TextTransparency = 0 }):Play()
-    TweenService:Create(textLabel, TweenInfo.new(fadeIn + 0.25), { TextTransparency = 0 }):Play()
+    -- hide main menu under it
+    local wasEnabled = true
+    pcall(function()
+        if ScreenGui then
+            wasEnabled = ScreenGui.Enabled
+            ScreenGui.Enabled = false
+        end
+    end)
 
     task.delay(duration, function()
-        if not gui.Parent then return end
-        TweenService:Create(overlay, TweenInfo.new(fadeOut), { BackgroundTransparency = 1 }):Play()
-        TweenService:Create(card, TweenInfo.new(fadeOut), { BackgroundTransparency = 1 }):Play()
-        TweenService:Create(stroke, TweenInfo.new(fadeOut), { Transparency = 1 }):Play()
-        TweenService:Create(accentLine, TweenInfo.new(fadeOut), { BackgroundTransparency = 1 }):Play()
-        TweenService:Create(refLabel, TweenInfo.new(fadeOut), { TextTransparency = 1 }):Play()
-        TweenService:Create(textLabel, TweenInfo.new(fadeOut), { TextTransparency = 1 }):Play()
-        task.wait(fadeOut + 0.1)
-        pcall(function() gui:Destroy() end)
+        pcall(function()
+            if gui and gui.Parent then
+                TweenService:Create(overlay, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
+                TweenService:Create(card, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
+                TweenService:Create(stroke, TweenInfo.new(0.6), { Transparency = 1 }):Play()
+                TweenService:Create(refLabel, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
+                TweenService:Create(textLabel, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
+                TweenService:Create(line, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+            end
+        end)
+        task.wait(0.7)
+        pcall(function() if gui then gui:Destroy() end end)
+        pcall(function() if ScreenGui then ScreenGui.Enabled = wasEnabled end end)
     end)
 
     return gui
 end
 
--- Always show verse loading screen when library is injected
-task.spawn(function()
-    task.wait(0.05)
+-- Show loading verse every inject (immediate, not deferred away)
+do
     local ok, err = pcall(function()
-        -- hide main menu while verse is up
-        local wasEnabled = true
-        if ScreenGui then
-            wasEnabled = ScreenGui.Enabled
-            ScreenGui.Enabled = false
-        end
-        if Library and Library.ShowLoadingScreen then
-            Library:ShowLoadingScreen({ Duration = 12 })
-        end
-        task.delay(12.9, function()
-            if ScreenGui then
-                ScreenGui.Enabled = wasEnabled
-            end
-        end)
+        Library:ShowLoadingScreen({ Duration = 12 })
     end)
     if not ok then
-        warn("[Frostveil] Loading screen error:", err)
-        pcall(function()
-            if ScreenGui then ScreenGui.Enabled = true end
-        end)
+        warn("[Frostveil] Loading screen failed:", err)
+        pcall(function() if ScreenGui then ScreenGui.Enabled = true end end)
     end
-end)
+end
 
-print("[Frostveil] v2.0.0 loaded — full library ready")
+
+
 return Library
-
