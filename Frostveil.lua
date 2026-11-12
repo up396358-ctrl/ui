@@ -743,17 +743,12 @@ function Library:CreateWindow(config)
     end
     Library.IsMobile = isMobile
 
-    -- Fit window to phone / tablet
-    if isMobile and not config.Size then
-        local w = math.clamp(math.floor(vp.X * 0.96), 300, 520)
-        local h = math.clamp(math.floor(vp.Y * 0.82), 360, 640)
-        size = UDim2.fromOffset(w, h)
-    elseif isMobile and config.Size then
-        -- still clamp user size so it never overflows the screen
-        local w = math.min(size.X.Offset > 0 and size.X.Offset or 700, math.floor(vp.X * 0.98))
-        local h = math.min(size.Y.Offset > 0 and size.Y.Offset or 500, math.floor(vp.Y * 0.88))
-        size = UDim2.fromOffset(math.max(280, w), math.max(320, h))
-    end
+    -- Mobile keeps the SAME shape as PC (default 640x460). Only scales down to fit.
+    local baseW = (size.X.Offset > 0) and size.X.Offset or 640
+    local baseH = (size.Y.Offset > 0) and size.Y.Offset or 460
+    if baseW < 100 then baseW = 640 end
+    if baseH < 100 then baseH = 460 end
+    size = UDim2.fromOffset(baseW, baseH)
 
     local Window = {
         Tabs = {},
@@ -810,21 +805,19 @@ function Library:CreateWindow(config)
         end
         Library.IsMobile = mobileNow
         Window.IsMobile = mobileNow
+        -- Always keep PC window shape
+        Outer.Size = UDim2.fromOffset(baseW, baseH)
+        Outer.Position = UDim2.fromScale(0.5, 0.5)
+        Outer.AnchorPoint = Vector2.new(0.5, 0.5)
         if not mobileNow then
             uiScale.Scale = 1
             return
         end
-        local targetW = math.clamp(math.floor(v.X * 0.96), 300, 520)
-        local targetH = math.clamp(math.floor(v.Y * 0.82), 360, 640)
-        Outer.Size = UDim2.fromOffset(targetW, targetH)
-        Outer.Position = UDim2.fromScale(0.5, 0.5)
-        Outer.AnchorPoint = Vector2.new(0.5, 0.5)
-        -- slight scale down on very small phones so controls don't overflow
-        if v.X < 380 then
-            uiScale.Scale = 0.92
-        else
-            uiScale.Scale = 1
-        end
+        -- Same shape as PC, just scaled to fit the screen
+        local padX, padY = 0.96, 0.88
+        local scale = math.min((v.X * padX) / baseW, (v.Y * padY) / baseH)
+        scale = math.clamp(scale, 0.45, 1)
+        uiScale.Scale = scale
     end
     Window.ApplyMobileLayout = applyMobileLayout
     if isMobile then
@@ -954,7 +947,7 @@ function Library:CreateWindow(config)
         BackgroundColor3 = Color3.fromRGB(12, 16, 24),
         BackgroundTransparency = 0.08,
         BorderSizePixel = 0,
-        Size = isMobile and UDim2.fromOffset(math.min(300, math.floor(vp.X * 0.92)), math.min(460, math.floor(vp.Y * 0.78))) or UDim2.fromOffset(320, 420),
+        Size = UDim2.fromOffset(320, 420),
         Position = UDim2.fromScale(0.5, 0.5),
         AnchorPoint = Vector2.new(0.5, 0.5),
         Visible = false,
@@ -1610,8 +1603,8 @@ function Library:CreateWindow(config)
         BackgroundColor3 = Color3.fromRGB(12, 16, 24),
         BackgroundTransparency = 0.15,
         BorderSizePixel = 0,
-        Size = UDim2.fromOffset(isMobile and 120 or 168, isMobile and 28 or 26),
-        Position = UDim2.new(1, isMobile and -240 or -290, 0.5, isMobile and -14 or -13),
+        Size = UDim2.fromOffset(168, 26),
+        Position = UDim2.new(1, -290, 0.5, -13),
         Font = Enum.Font.Gotham,
         Text = "",
         PlaceholderText = "Search menu...",
@@ -1853,7 +1846,7 @@ function Library:CreateWindow(config)
     end
 
     -- Sidebar (scrollable tab list)
-    local sidebarWidth = isMobile and 112 or 158
+    local sidebarWidth = 158
     local Sidebar = Create("ScrollingFrame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
@@ -1872,10 +1865,10 @@ function Library:CreateWindow(config)
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     Library:AddToRegistry(Sidebar, { BackgroundColor3 = "SidebarColor" })
-    ListLayout(Sidebar, isMobile and 4 or 6)
-    Padding(Sidebar, isMobile and 10 or 16, 14, isMobile and 8 or 12, isMobile and 8 or 12)
+    ListLayout(Sidebar, 6)
+    Padding(Sidebar, 16, 14, 12, 12)
 
-    -- Content holder
+    -- Content holder (same layout as PC)
     local contentPad = sidebarWidth + 10
     local ContentHolder = Create("Frame", {
         Name = "ContentHolder",
@@ -2280,8 +2273,8 @@ function Library:CreateWindow(config)
                 local track = Create("Frame", {
                     BackgroundColor3 = Library.ToggleOffColor,
                     BorderSizePixel = 0,
-                    Size = UDim2.fromOffset(isMobile and 48 or 44, isMobile and 28 or 24),
-                    Position = UDim2.new(1, isMobile and -48 or -44, 0.5, isMobile and -14 or -12),
+                    Size = UDim2.fromOffset(44, 24),
+                    Position = UDim2.new(1, -44, 0.5, -12),
                     ZIndex = 12,
                     Parent = holder,
                 })
