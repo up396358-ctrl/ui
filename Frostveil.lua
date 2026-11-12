@@ -26,7 +26,8 @@ local HttpService       = game:GetService("HttpService")
 local GuiService        = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
-local Mouse       = LocalPlayer:GetMouse()
+local Mouse       = nil
+pcall(function() Mouse = LocalPlayer:GetMouse() end)
 local Camera      = workspace.CurrentCamera
 local RenderStepped = RunService.RenderStepped
 local Heartbeat     = RunService.Heartbeat
@@ -180,8 +181,18 @@ function Library:SafeCallback(func, ...)
 end
 
 function Library:GetTextBounds(text, font, size, frameSize)
-    local bounds = TextService:GetTextSize(text, size or 14, font or self.Font, frameSize or Vector2.new(math.huge, math.huge))
-    return bounds.X, bounds.Y
+    text = tostring(text or "")
+    size = size or 14
+    font = font or self.Font
+    frameSize = frameSize or Vector2.new(math.huge, math.huge)
+    local ok, bounds = pcall(function()
+        return TextService:GetTextSize(text, size, font, frameSize)
+    end)
+    if ok and bounds then
+        return bounds.X, bounds.Y
+    end
+    -- fallback estimate
+    return math.max(1, #text * (size * 0.55)), size + 4
 end
 
 function Library:MapValue(value, inMin, inMax, outMin, outMax)
@@ -7024,7 +7035,7 @@ function Library:ShowLoadingScreen(opts)
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
     textLabel.TextYAlignment = Enum.TextYAlignment.Top
     textLabel.TextWrapped = true
-    textLabel.Text = "\u{201C}" .. tostring(txt) .. "\u{201D}"
+    textLabel.Text = "“" .. tostring(txt) .. "”"
     textLabel.TextTransparency = 1
     textLabel.Parent = card
 
