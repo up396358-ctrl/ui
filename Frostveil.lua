@@ -6925,7 +6925,16 @@ function Library:ShowLoadingScreen(opts)
     gui.IgnoreGuiInset = true
     gui.DisplayOrder = 10000
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ProtectAndParent(gui)
+    if type(ProtectAndParent) == "function" then
+        ProtectAndParent(gui)
+    else
+        pcall(function()
+            if gethui then gui.Parent = gethui() else gui.Parent = game:GetService("CoreGui") end
+        end)
+        if not gui.Parent then
+            pcall(function() gui.Parent = LocalPlayer:WaitForChild("PlayerGui") end)
+        end
+    end
 
     -- Dim overlay (matches Frostveil void feel)
     local overlay = Instance.new("Frame")
@@ -6946,7 +6955,11 @@ function Library:ShowLoadingScreen(opts)
     card.BackgroundTransparency = 1
     card.BorderSizePixel = 0
     card.Parent = gui
-    Round(card, 12)
+    do
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = card
+    end
 
     local grad = Instance.new("UIGradient")
     grad.Color = ColorSequence.new({
@@ -7043,7 +7056,9 @@ task.defer(function()
     pcall(function()
         if getgenv()._FrostveilVerseShown then return end
         getgenv()._FrostveilVerseShown = true
-        Library:ShowLoadingScreen({ Duration = 12 })
+        if Library and type(Library.ShowLoadingScreen) == "function" then
+            Library:ShowLoadingScreen({ Duration = 12 })
+        end
     end)
 end)
 
