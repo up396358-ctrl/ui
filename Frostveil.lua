@@ -1,4 +1,4 @@
---[[
+---[[
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║   F R O S T V E I L   U I   L I B R A R Y                                    ║
@@ -1161,10 +1161,10 @@ function Library:CreateWindow(config)
         { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
-        { Name = "Patrick", Id = "98569609705523" },
-        { Name = "Pocoyo", Id = "75503978377990" },
+        { Name = "Patrick", Id = "130152189846750" },
+        { Name = "Pocoyo", Id = "134844262260089" },
         { Name = "The Thinker", Id = "71890428605210" },
-        { Name = "Hwz", Id = "139744518359531" },
+        { Name = "Hwz", Id = "134780559674403" },
         { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
         { Name = "100$", Id = "76496312144969" },
@@ -3276,14 +3276,22 @@ function Library:SetWatermark(text)
     WatermarkFrame.Visible = true
 end
 
+-- ══════════════════════════════════════════════════════════════════════════════
+-- END OF LIBRARY — return for loadstring
+-- ══════════════════════════════════════════════════════════════════════════════
+
+print("[Frostveil] v2.0.0 loaded")
 
 
-print("Hollowoodz come back !!!!")
-
-
-
+-- ══════════════════════════════════════════════════════════════════════════════
+-- EXTENDED DOCUMENTATION & API REFERENCE
+-- (This section is documentation only — does not execute)
+-- ══════════════════════════════════════════════════════════════════════════════
 
 --[[
+================================================================================
+FROSTVEIL COMPLETE API REFERENCE
+================================================================================
 
 Library:CreateWindow(config)
   config.Title                 string   Window title text
@@ -6834,6 +6842,211 @@ function Library:_CreateColorPicker(parentBox, index, info, resizeFn)
     return ColorObject
 end
 
-print("Hollowoodz V2 has loaded")
-print("Hope you enjoy yn")
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- LOADING SCREEN — Daily Bible Verse (Frostveil theme)
+-- ══════════════════════════════════════════════════════════════════════════════
+
+local VERSES = {
+    {"John 3:16", "For God so loved the world, that he gave his only born Son, that whoever believes in him should not perish, but have eternal life."},
+    {"John 8:12", "I am the light of the world. He who follows me will not walk in the darkness, but will have the light of life."},
+    {"John 14:6", "I am the way, the truth, and the life. No one comes to the Father, except through me."},
+    {"John 14:27", "Peace I leave with you. My peace I give to you; not as the world gives, I give to you. Don't let your heart be troubled, neither let it be fearful."},
+    {"John 16:33", "I have told you these things, that in me you may have peace. In the world you have trouble; but cheer up! I have overcome the world."},
+    {"Psalm 23:1", "Yahweh is my shepherd; I shall lack nothing."},
+    {"Psalm 27:1", "Yahweh is my light and my salvation. Whom shall I fear? Yahweh is the strength of my life. Of whom shall I be afraid?"},
+    {"Psalm 46:1", "God is our refuge and strength, a very present help in trouble."},
+    {"Psalm 46:10", "Be still, and know that I am God."},
+    {"Psalm 119:105", "Your word is a lamp to my feet, and a light for my path."},
+    {"Proverbs 3:5", "Trust in Yahweh with all your heart, and don't lean on your own understanding."},
+    {"Isaiah 40:31", "But those who wait for Yahweh will renew their strength. They will mount up with wings like eagles."},
+    {"Isaiah 41:10", "Don't you be afraid, for I am with you. Don't be dismayed, for I am your God. I will strengthen you. Yes, I will help you."},
+    {"Jeremiah 29:11", "For I know the thoughts that I think toward you, says Yahweh, thoughts of peace, and not of evil, to give you hope and a future."},
+    {"Matthew 11:28", "Come to me, all you who labor and are heavily burdened, and I will give you rest."},
+    {"Matthew 19:26", "With men this is impossible, but with God all things are possible."},
+    {"Romans 8:28", "We know that all things work together for good for those who love God, for those who are called according to his purpose."},
+    {"Romans 8:31", "What then shall we say about these things? If God is for us, who can be against us?"},
+    {"Philippians 4:6", "In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God."},
+    {"Philippians 4:13", "I can do all things through Christ, who strengthens me."},
+    {"2 Timothy 1:7", "For God didn't give us a spirit of fear, but of power, love, and self-control."},
+    {"Hebrews 11:1", "Now faith is assurance of things hoped for, proof of things not seen."},
+    {"Hebrews 13:5", "I will in no way leave you, neither will I in any way forsake you."},
+    {"James 1:5", "But if any of you lacks wisdom, let him ask of God, who gives to all liberally and without reproach, and it will be given to him."},
+    {"1 Peter 5:7", "casting all your worries on him, because he cares for you."},
+    {"1 John 4:19", "We love him, because he first loved us."},
+    {"Revelation 21:4", "He will wipe away every tear from their eyes. Death will be no more; neither will there be mourning, nor crying, nor pain any more."},
+    {"Psalm 30:5", "Weeping may stay for the night, but joy comes in the morning."},
+    {"Psalm 34:18", "Yahweh is near to those who have a broken heart, and saves those who have a crushed spirit."},
+    {"Isaiah 43:2", "When you pass through the waters, I will be with you, and through the rivers, they will not overflow you."},
+    {"Lamentations 3:22", "It is because of Yahweh's loving kindnesses that we are not consumed, because his compassion doesn't fail."},
+    {"Lamentations 3:23", "They are new every morning. Great is your faithfulness."},
+    {"Matthew 6:34", "Therefore don't be anxious for tomorrow, for tomorrow will be anxious for itself."},
+    {"2 Corinthians 5:17", "Therefore if anyone is in Christ, he is a new creation. The old things have passed away. Behold, all things have become new."},
+    {"Galatians 6:9", "Let's not be weary in doing good, for we will reap in due season if we don't give up."},
+    {"Ephesians 2:8", "for by grace you have been saved through faith, and that not of yourselves; it is the gift of God."},
+    {"Philippians 4:7", "And the peace of God, which surpasses all understanding, will guard your hearts and your thoughts in Christ Jesus."},
+    {"1 Thessalonians 5:16", "Always rejoice."},
+    {"1 Thessalonians 5:17", "Pray without ceasing."},
+    {"Joshua 1:9", "Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go."},
+}
+
+function Library:ShowLoadingScreen(opts)
+    opts = opts or {}
+    local duration = tonumber(opts.Duration) or 12
+    local fadeIn = tonumber(opts.FadeIn) or 0.75
+    local fadeOut = tonumber(opts.FadeOut) or 0.9
+
+    local bg = self.BackgroundColor or Color3.fromRGB(7, 9, 14)
+    local main = self.MainColor or Color3.fromRGB(16, 20, 32)
+    local accent = self.AccentColor or Color3.fromRGB(100, 210, 255)
+    local fontCol = self.FontColor or Color3.fromRGB(255, 255, 255)
+    local outline = self.OutlineColor or Color3.fromRGB(48, 78, 120)
+
+    local rng = Random.new(tick() * 1000 + (LocalPlayer and LocalPlayer.UserId or 0))
+    local verse = VERSES[rng:NextInteger(1, #VERSES)]
+    local ref, txt = verse[1], verse[2]
+
+    local parentGui = CoreGui
+    pcall(function() if gethui then parentGui = gethui() end end)
+
+    local old = parentGui:FindFirstChild("FrostveilLoadingVerse")
+    if old then old:Destroy() end
+    pcall(function()
+        local pg = LocalPlayer:FindFirstChild("PlayerGui")
+        if pg then
+            local o2 = pg:FindFirstChild("FrostveilLoadingVerse")
+            if o2 then o2:Destroy() end
+        end
+    end)
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "FrostveilLoadingVerse"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.DisplayOrder = 10000
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ProtectAndParent(gui)
+
+    -- Dim overlay (matches Frostveil void feel)
+    local overlay = Instance.new("Frame")
+    overlay.Name = "Overlay"
+    overlay.Size = UDim2.fromScale(1, 1)
+    overlay.BackgroundColor3 = bg
+    overlay.BackgroundTransparency = 1
+    overlay.BorderSizePixel = 0
+    overlay.Parent = gui
+
+    -- Card
+    local card = Instance.new("Frame")
+    card.Name = "VerseCard"
+    card.AnchorPoint = Vector2.new(0.5, 0.5)
+    card.Position = UDim2.fromScale(0.5, 0.5)
+    card.Size = UDim2.fromOffset(620, 280)
+    card.BackgroundColor3 = main
+    card.BackgroundTransparency = 1
+    card.BorderSizePixel = 0
+    card.Parent = gui
+    Round(card, 12)
+
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(
+            math.min(255, math.floor(main.R * 255 + 8)),
+            math.min(255, math.floor(main.G * 255 + 10)),
+            math.min(255, math.floor(main.B * 255 + 14))
+        )),
+        ColorSequenceKeypoint.new(1, bg),
+    })
+    grad.Rotation = 90
+    grad.Parent = card
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = accent
+    stroke.Thickness = 1.4
+    stroke.Transparency = 1
+    stroke.Parent = card
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 36)
+    pad.PaddingBottom = UDim.new(0, 36)
+    pad.PaddingLeft = UDim.new(0, 44)
+    pad.PaddingRight = UDim.new(0, 44)
+    pad.Parent = card
+
+    -- Accent top line
+    local accentLine = Instance.new("Frame")
+    accentLine.Size = UDim2.new(1, 0, 0, 2)
+    accentLine.Position = UDim2.fromOffset(0, 0)
+    accentLine.BackgroundColor3 = accent
+    accentLine.BackgroundTransparency = 1
+    accentLine.BorderSizePixel = 0
+    accentLine.Parent = card
+
+    local refLabel = Instance.new("TextLabel")
+    refLabel.Name = "Reference"
+    refLabel.Size = UDim2.new(1, 0, 0, 28)
+    refLabel.Position = UDim2.fromOffset(0, 18)
+    refLabel.BackgroundTransparency = 1
+    refLabel.Font = Enum.Font.GothamBold
+    refLabel.TextSize = 20
+    refLabel.TextColor3 = Color3.fromRGB(
+        math.min(255, math.floor(accent.R * 255 * 0.85 + 40)),
+        math.min(255, math.floor(accent.G * 255 * 0.85 + 40)),
+        math.min(255, math.floor(accent.B * 255 * 0.85 + 40))
+    )
+    refLabel.TextXAlignment = Enum.TextXAlignment.Left
+    refLabel.Text = "Daily Bible Verse  ·  " .. tostring(ref)
+    refLabel.TextTransparency = 1
+    refLabel.Parent = card
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Name = "VerseText"
+    textLabel.Size = UDim2.new(1, 0, 1, -70)
+    textLabel.Position = UDim2.fromOffset(0, 58)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 22
+    textLabel.LineHeight = 1.28
+    textLabel.TextColor3 = fontCol
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = Enum.TextYAlignment.Top
+    textLabel.TextWrapped = true
+    textLabel.Text = "\u{201C}" .. tostring(txt) .. "\u{201D}"
+    textLabel.TextTransparency = 1
+    textLabel.Parent = card
+
+    -- Fade in
+    TweenService:Create(overlay, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.35 }):Play()
+    TweenService:Create(card, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.05 }):Play()
+    TweenService:Create(stroke, TweenInfo.new(fadeIn), { Transparency = 0.45 }):Play()
+    TweenService:Create(accentLine, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.25 }):Play()
+    TweenService:Create(refLabel, TweenInfo.new(fadeIn + 0.1), { TextTransparency = 0 }):Play()
+    TweenService:Create(textLabel, TweenInfo.new(fadeIn + 0.25), { TextTransparency = 0 }):Play()
+
+    task.delay(duration, function()
+        if not gui.Parent then return end
+        TweenService:Create(overlay, TweenInfo.new(fadeOut), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(card, TweenInfo.new(fadeOut), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(stroke, TweenInfo.new(fadeOut), { Transparency = 1 }):Play()
+        TweenService:Create(accentLine, TweenInfo.new(fadeOut), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(refLabel, TweenInfo.new(fadeOut), { TextTransparency = 1 }):Play()
+        TweenService:Create(textLabel, TweenInfo.new(fadeOut), { TextTransparency = 1 }):Play()
+        task.wait(fadeOut + 0.1)
+        pcall(function() gui:Destroy() end)
+    end)
+
+    return gui
+end
+
+-- Auto-show once when the library is first required
+task.defer(function()
+    pcall(function()
+        if getgenv()._FrostveilVerseShown then return end
+        getgenv()._FrostveilVerseShown = true
+        Library:ShowLoadingScreen({ Duration = 12 })
+    end)
+end)
+
+print("[Frostveil] v2.0.0 loaded — full library ready")
 return Library
+
