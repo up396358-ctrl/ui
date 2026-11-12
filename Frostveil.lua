@@ -1960,7 +1960,7 @@ function Library:CreateWindow(config)
 
 
 
-        -- ════════════════════════════════════════════════════════════════════════
+         -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
@@ -2004,7 +2004,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = Outer.Visible and "Close UI" or "Open UI",
+            Text = "Close UI", -- Will update dynamically
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2090,7 +2090,7 @@ function Library:CreateWindow(config)
                                 SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
                             end
                         end)
-                        Window.RefreshLockFloat() -- Call via Window scope
+                        Window.RefreshLockFloat()
                     end
                 end
             end
@@ -2122,11 +2122,14 @@ function Library:CreateWindow(config)
         end)
 
         -- State Refreshers
-        local function refreshToggleFloat()
-            ToggleText.Text = Outer.Visible and "Close UI" or "Open UI"
+        local function refreshToggleFloat(isOpen)
+            if isOpen then
+                ToggleText.Text = "Close UI"
+            else
+                ToggleText.Text = "Open UI"
+            end
         end
 
-        -- Store in Window so it can be accessed outside this scope
         Window.RefreshLockFloat = function()
             if Window.DragLocked then
                 LockText.Text = "Unlock UI"
@@ -2139,24 +2142,30 @@ function Library:CreateWindow(config)
             end
         end
 
-        -- Keep toggle text in sync when using keybind / titlebar min
+        -- Hook into the UI Toggle to accurately update the text
         local oldToggle = Window.Toggle
         function Window:Toggle()
             oldToggle(self)
-            task.defer(refreshToggleFloat)
+            -- Since oldToggle flips the state, we check if it's currently visible (or going to be hidden)
+            -- Outer.Visible is true when clicked to close.
+            task.defer(function()
+                refreshToggleFloat(not Outer.Visible)
+            end)
         end
+        
         local oldShow = Window.Show
         function Window:Show()
             oldShow(self)
-            task.defer(refreshToggleFloat)
+            task.defer(function() refreshToggleFloat(true) end)
         end
+        
         local oldHide = Window.Hide
         function Window:Hide()
             oldHide(self)
-            task.defer(refreshToggleFloat)
+            task.defer(function() refreshToggleFloat(false) end)
         end
 
-        refreshToggleFloat()
+        refreshToggleFloat(Outer.Visible)
         Window.RefreshLockFloat()
     end
     
