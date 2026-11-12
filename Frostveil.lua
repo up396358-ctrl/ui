@@ -685,6 +685,7 @@ function Library:MakeDraggable(frame, dragHeight)
     })
 
     dragZone.InputBegan:Connect(function(input)
+        if frame:GetAttribute("DragLocked") then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1
             or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
@@ -694,8 +695,13 @@ function Library:MakeDraggable(frame, dragHeight)
     end)
 
     Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch) then
+        if not dragging then return end
+        if frame:GetAttribute("DragLocked") then
+            dragging = false
+            return
+        end
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
             local delta = input.Position - dragStart
             frame.Position = UDim2.new(
                 startPos.X.Scale,
@@ -1951,6 +1957,107 @@ function Library:CreateWindow(config)
             end
         end
     end))
+
+
+    -- ════════════════════════════════════════════════════════════════════════
+    -- FLOATING TOGGLE + LOCK (always on screen — mobile friendly)
+    -- ════════════════════════════════════════════════════════════════════════
+    Outer:SetAttribute("DragLocked", false)
+    Window.DragLocked = false
+
+    local FloatControls = Create("Frame", {
+        Name = "FrostveilFloatControls",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(108, 48),
+        Position = UDim2.new(1, -120, 1, -64),
+        AnchorPoint = Vector2.new(0, 0),
+        ZIndex = 250,
+        Parent = ScreenGui,
+    })
+    Window.FloatControls = FloatControls
+
+    local function makeFloatBtn(name, text, order, color)
+        local b = Create("TextButton", {
+            Name = name,
+            BackgroundColor3 = color or Color3.fromRGB(16, 20, 30),
+            BackgroundTransparency = 0.12,
+            BorderSizePixel = 0,
+            Size = UDim2.fromOffset(48, 48),
+            Position = UDim2.fromOffset(order * 54, 0),
+            Font = Enum.Font.GothamBold,
+            Text = text,
+            TextSize = 18,
+            TextColor3 = Color3.fromRGB(240, 245, 255),
+            AutoButtonColor = false,
+            ZIndex = 251,
+            Parent = FloatControls,
+        })
+        Round(b, 12)
+        Stroke(b, Library.AccentColor, 1.2, 0.4)
+        return b
+    end
+
+    local ToggleFloat = makeFloatBtn("ToggleMenu", "☰", 0, Color3.fromRGB(14, 22, 36))
+    local LockFloat = makeFloatBtn("LockMenu", "🔓", 1, Color3.fromRGB(14, 22, 36))
+
+    local function refreshToggleFloat()
+        if Outer.Visible then
+            ToggleFloat.Text = "☰"
+            ToggleFloat.BackgroundColor3 = Color3.fromRGB(14, 22, 36)
+        else
+            ToggleFloat.Text = "☰"
+            ToggleFloat.BackgroundColor3 = Color3.fromRGB(28, 40, 60)
+        end
+    end
+
+    local function refreshLockFloat()
+        if Window.DragLocked then
+            LockFloat.Text = "🔒"
+            LockFloat.BackgroundColor3 = Color3.fromRGB(40, 28, 20)
+        else
+            LockFloat.Text = "🔓"
+            LockFloat.BackgroundColor3 = Color3.fromRGB(14, 22, 36)
+        end
+    end
+
+    ToggleFloat.MouseButton1Click:Connect(function()
+        Window:Toggle()
+        task.defer(refreshToggleFloat)
+    end)
+    LockFloat.MouseButton1Click:Connect(function()
+        Window.DragLocked = not Window.DragLocked
+        Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
+        -- also lock settings panel drag if present
+        pcall(function()
+            if SettingsPanel then
+                SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
+            end
+        end)
+        refreshLockFloat()
+        if Library.Notify then
+            Library:Notify(Window.DragLocked and "UI Locked — can't move" or "UI Unlocked — drag enabled", 1.5)
+        end
+    end)
+
+    -- keep toggle icon in sync when using keybind / titlebar min
+    local oldToggle = Window.Toggle
+    function Window:Toggle()
+        oldToggle(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldShow = Window.Show
+    function Window:Show()
+        oldShow(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldHide = Window.Hide
+    function Window:Hide()
+        oldHide(self)
+        task.defer(refreshToggleFloat)
+    end
+
+    refreshToggleFloat()
+    refreshLockFloat()
 
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
