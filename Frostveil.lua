@@ -1959,7 +1959,7 @@ function Library:CreateWindow(config)
     end))
 
 
-    -- ════════════════════════════════════════════════════════════════════════
+       -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
@@ -2003,7 +2003,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = Outer.Visible and "Close UI" or "Open UI",
+            Text = "Close UI",
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2022,7 +2022,7 @@ function Library:CreateWindow(config)
             Parent = FloatControls,
         })
 
-        -- Input Detector (Handles Dragging and Clicking)
+        -- Input Detector
         local InputDetector = Create("TextButton", {
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
@@ -2122,6 +2122,7 @@ function Library:CreateWindow(config)
 
         -- State Refreshers
         local function refreshToggleFloat()
+            -- Checks if the Window is currently visible. If yes, it can be closed.
             if Outer.Visible then
                 ToggleText.Text = "Close UI"
             else
@@ -2141,22 +2142,17 @@ function Library:CreateWindow(config)
             end
         end
 
-        -- THE FIX: Listen directly to the property change of the window.
-        -- The exact moment the UI finishes fading out, Outer.Visible turns false and triggers this.
-        Outer:GetPropertyChangedSignal("Visible"):Connect(refreshToggleFloat)
+        -- Hook directly into the animation functions for immediate visual feedback
+        local oldAnimateShow = animateShow
+        function animateShow()
+            oldAnimateShow()
+            refreshToggleFloat()
+        end
 
-        -- Keep toggle text in sync when using keybind / titlebar min
-        local oldToggle = Window.Toggle
-        function Window:Toggle()
-            oldToggle(self)
-        end
-        local oldShow = Window.Show
-        function Window:Show()
-            oldShow(self)
-        end
-        local oldHide = Window.Hide
-        function Window:Hide()
-            oldHide(self)
+        local oldAnimateHide = animateHide
+        function animateHide()
+            oldAnimateHide()
+            refreshToggleFloat()
         end
 
         refreshToggleFloat()
