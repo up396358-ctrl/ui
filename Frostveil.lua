@@ -89,6 +89,7 @@ local Library = {
 
     -- Theme (Premium Void Ice)
     FontColor       = Color3.fromRGB(255, 255, 255),
+    ElementTextColor = Color3.fromRGB(255, 255, 255),
     MainColor       = Color3.fromRGB(16, 20, 32),
     BackgroundColor = Color3.fromRGB(7, 9, 14),
     AccentColor     = Color3.fromRGB(100, 210, 255),
@@ -736,7 +737,19 @@ function Library:CreateWindow(config)
         Snow = nil,
         BackgroundImageLabel = nil,
         Title = title,
+        SearchIndex = {},
     }
+
+    local function registerSearchItem(kind, text, tabObj, groupboxObj, focusInstance)
+        if not text or text == "" then return end
+        table.insert(Window.SearchIndex, {
+            Kind = kind,
+            Text = tostring(text),
+            Tab = tabObj,
+            Groupbox = groupboxObj,
+            Focus = focusInstance,
+        })
+    end
 
     -- Outer container (transparent so background texture shows)
     local Outer = Create("Frame", {
@@ -848,7 +861,7 @@ function Library:CreateWindow(config)
     local TitleLabel = Create("TextLabel", {
         Name = "Title",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -150, 1, 0),
+        Size = UDim2.new(1, -310, 1, 0),
         Position = UDim2.fromOffset(18, 0),
         Font = Enum.Font.GothamBold,
         Text = title,
@@ -1095,6 +1108,8 @@ function Library:CreateWindow(config)
                 Library.SidebarColor = c
             elseif colorKey == "FontColor" then
                 Library.GroupTitleColor = c
+            elseif colorKey == "ElementTextColor" then
+                -- element text only; titles stay on FontColor
             end
             preview.BackgroundColor3 = c
             svBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
@@ -1162,7 +1177,8 @@ function Library:CreateWindow(config)
     -- Only 3 pickers control the whole UI
     addColorPickerRow("Accent", "AccentColor")
     addColorPickerRow("Background", "BackgroundColor")
-    addColorPickerRow("Text", "FontColor")
+    addColorPickerRow("Titles / Labels", "FontColor")
+    addColorPickerRow("Buttons / Toggles / Dropdowns", "ElementTextColor")
 
     -- Background texture dropdown
     Create("TextLabel", {
@@ -1511,6 +1527,162 @@ function Library:CreateWindow(config)
 
     Window.OpenSettings = openSettings
     Window.CloseSettings = closeSettings
+
+    -- Menu search (jumps to tab + groupbox)
+    local SearchBox = Create("TextBox", {
+        Name = "MenuSearch",
+        BackgroundColor3 = Color3.fromRGB(12, 16, 24),
+        BackgroundTransparency = 0.15,
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(168, 26),
+        Position = UDim2.new(1, -290, 0.5, -13),
+        Font = Enum.Font.Gotham,
+        Text = "",
+        PlaceholderText = "Search menu...",
+        PlaceholderColor3 = Color3.fromRGB(140, 150, 165),
+        TextSize = 12,
+        TextColor3 = Library.ElementTextColor,
+        ClearTextOnFocus = false,
+        ZIndex = 14,
+        Parent = TopBar,
+    })
+    Round(SearchBox, 6)
+    Stroke(SearchBox, Library.OutlineColor, 1, 0.5)
+    Library:AddToRegistry(SearchBox, { TextColor3 = "ElementTextColor" })
+    Padding(SearchBox, 0, 0, 8, 8)
+
+    local SearchResults = Create("Frame", {
+        Name = "SearchResults",
+        BackgroundColor3 = Color3.fromRGB(14, 18, 28),
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(220, 0),
+        Position = UDim2.new(1, -320, 1, 4),
+        Visible = false,
+        ZIndex = 50,
+        Parent = TopBar,
+        ClipsDescendants = true,
+    })
+    Round(SearchResults, 8)
+    Stroke(SearchResults, Library.AccentColor, 1, 0.45)
+    local searchList = ListLayout(SearchResults, 2)
+    Padding(SearchResults, 4, 4, 4, 4)
+
+    local function hideSearchResults()
+        SearchResults.Visible = false
+        for _, c in ipairs(SearchResults:GetChildren()) do
+            if c:IsA("TextButton") then c:Destroy() end
+        end
+    end
+
+    local function jumpToSearchItem(item)
+        hideSearchResults()
+        SearchBox.Text = ""
+        if not item or not item.Tab then return end
+        -- activate tab
+        pcall(function()
+            if type(item.Tab.Activate) == "function" then
+                item.Tab.Activate()
+            elseif type(item.Tab.Show) == "function" then
+                item.Tab:Show()
+            end
+        end)
+        -- scroll groupbox into view
+        task.defer(function()
+            pcall(function()
+                local gb = item.Groupbox
+                local boxFrame = gb and (gb.Box or gb.Holder or gb.Frame)
+                local scroll = item.Tab and (item.Tab.LeftScroll or item.Tab.RightScroll or item.Tab.Scroll)
+                -- try common fields
+                if item.Focus and item.Focus.Parent then
+                    local focus = item.Focus
+                    local parent = focus.Parent
+                    while parent and parent ~= ScreenGui do
+                        if parent:IsA("ScrollingFrame") then
+                            local y = focus.AbsolutePosition.Y - parent.AbsolutePosition.Y + parent.CanvasPosition.Y - 20
+                            parent.CanvasPosition = Vector2.new(0, math.max(0, y))
+                            break
+                        end
+                        parent = parent.Parent
+                    end
+                end
+            end)
+        end)
+        if Library.Notify then
+            Library:Notify("Found: " .. tostring(item.Text) .. " (" .. tostring(item.Kind) .. ")", 2)
+        end
+    end
+
+    local function refreshSearch()
+        hideSearchResults()
+        local q = string.lower(string.gsub(SearchBox.Text or "", "^%s+", ""))
+        if q == "" or #q < 1 then return end
+        local matches = {}
+        for _, item in ipairs(Window.SearchIndex) do
+            if string.find(string.lower(item.Text), q, 1, true) then
+                matches[#matches + 1] = item
+                if #matches >= 8 then break end
+            end
+        end
+        if #matches == 0 then
+            local none = Create("TextLabel", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 24),
+                Font = Enum.Font.Gotham,
+                Text = "No results",
+                TextSize = 12,
+                TextColor3 = Color3.fromRGB(160, 160, 170),
+                ZIndex = 51,
+                Parent = SearchResults,
+            })
+            SearchResults.Size = UDim2.fromOffset(220, 32)
+            SearchResults.Visible = true
+            return
+        end
+        for _, item in ipairs(matches) do
+            local tabName = "?"
+            pcall(function()
+                tabName = item.Tab and (item.Tab.Name or (item.Tab.Button and item.Tab.Button.Text)) or "?"
+            end)
+            local row = Create("TextButton", {
+                BackgroundTransparency = 0.4,
+                BackgroundColor3 = Color3.fromRGB(22, 28, 40),
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, 28),
+                Font = Enum.Font.Gotham,
+                Text = string.format("%s  ·  %s", item.Text, tabName),
+                TextSize = 12,
+                TextColor3 = Library.ElementTextColor,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                AutoButtonColor = false,
+                ZIndex = 51,
+                Parent = SearchResults,
+            })
+            Round(row, 5)
+            Padding(row, 0, 0, 8, 8)
+            local captured = item
+            row.MouseButton1Click:Connect(function()
+                jumpToSearchItem(captured)
+            end)
+        end
+        SearchResults.Size = UDim2.fromOffset(220, math.min(8, #matches) * 30 + 8)
+        SearchResults.Visible = true
+    end
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        refreshSearch()
+    end)
+    SearchBox.FocusLost:Connect(function(enter)
+        if enter then
+            local q = string.lower(SearchBox.Text or "")
+            for _, item in ipairs(Window.SearchIndex) do
+                if string.find(string.lower(item.Text), q, 1, true) then
+                    jumpToSearchItem(item)
+                    return
+                end
+            end
+        end
+    end)
 
     -- Settings gear button
     local SettingsButton = Create("TextButton", {
@@ -1884,6 +2056,8 @@ function Library:CreateWindow(config)
             Tab.Active = true
             Window.CurrentTab = Tab
         end
+        Tab.Activate = ActivateTab
+        Tab.Show = ActivateTab
 
         tabButton.MouseButton1Click:Connect(ActivateTab)
         tabButton.MouseEnter:Connect(function()
@@ -1968,8 +2142,10 @@ function Library:CreateWindow(config)
             Library:AddToRegistry(boxTitle, { TextColor3 = "FontColor" })
             local boxTitleLimit = Instance.new("UITextSizeConstraint")
             boxTitleLimit.MaxTextSize = 13
-            boxTitleLimit.MinTextSize = 9
+            boxTitleLimit.MinTextSize = 11
             boxTitleLimit.Parent = boxTitle
+            Groupbox.Box = box
+            registerSearchItem("Groupbox", titleText, Tab, Groupbox, box)
 
             local boxList = ListLayout(box, 8)
             Padding(box, 32, 12, 12, 12)
@@ -2007,16 +2183,21 @@ function Library:CreateWindow(config)
                     Font = Enum.Font.Gotham,
                     Text = text,
                     TextSize = 13,
-                    TextColor3 = risky and Library.RiskColor or Library.FontColor,
+                    TextColor3 = risky and Library.RiskColor or Library.ElementTextColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextScaled = true,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
                     ZIndex = 12,
                     Parent = holder,
                 })
+                if not risky then
+                    Library:AddToRegistry(toggleLabel, { TextColor3 = "ElementTextColor" })
+                end
                 local tLimit = Instance.new("UITextSizeConstraint")
                 tLimit.MaxTextSize = 13
-                tLimit.MinTextSize = 8
+                tLimit.MinTextSize = 11
                 tLimit.Parent = toggleLabel
+                registerSearchItem("Toggle", text, Tab, Groupbox, holder)
 
                 local track = Create("Frame", {
                     BackgroundColor3 = Library.ToggleOffColor,
@@ -2115,7 +2296,7 @@ function Library:CreateWindow(config)
                 })
                 local sLimit = Instance.new("UITextSizeConstraint")
                 sLimit.MaxTextSize = 13
-                sLimit.MinTextSize = 8
+                sLimit.MinTextSize = 11
                 sLimit.Parent = sliderLabel
 
                 local valueLabel = Create("TextLabel", {
@@ -2133,7 +2314,7 @@ function Library:CreateWindow(config)
                 })
                 local vLimit = Instance.new("UITextSizeConstraint")
                 vLimit.MaxTextSize = 13
-                vLimit.MinTextSize = 8
+                vLimit.MinTextSize = 11
                 vLimit.Parent = valueLabel
 
                 local barBackground = Create("Frame", {
@@ -2256,19 +2437,22 @@ function Library:CreateWindow(config)
                     Font = Enum.Font.GothamMedium,
                     Text = text,
                     TextSize = 13,
-                    TextColor3 = Library.FontColor,
+                    TextColor3 = Library.ElementTextColor,
                     TextScaled = true,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
                     TextXAlignment = Enum.TextXAlignment.Center,
                     AutoButtonColor = false,
                     ZIndex = 11,
                     Parent = box,
                 })
+                Library:AddToRegistry(button, { TextColor3 = "ElementTextColor" })
                 Round(button, 9)
                 Padding(button, 4, 4, 10, 10)
                 local btnSizeLimit = Instance.new("UITextSizeConstraint")
                 btnSizeLimit.MaxTextSize = 13
-                btnSizeLimit.MinTextSize = 8
+                btnSizeLimit.MinTextSize = 11
                 btnSizeLimit.Parent = button
+                registerSearchItem("Button", text, Tab, Groupbox, button)
                 local btnStroke = Stroke(button, Library.AccentColor, 1, 0.65)
 
                 local btnScale = Instance.new("UIScale")
@@ -2500,17 +2684,19 @@ function Groupbox:AddDivider()
                 })
 
                 if text and text ~= "" then
-                    Create("TextLabel", {
+                    local dropTitle = Create("TextLabel", {
                         BackgroundTransparency = 1,
                         Size = UDim2.new(1, 0, 0, 18),
                         Font = Enum.Font.Gotham,
                         Text = text,
                         TextSize = 13,
-                        TextColor3 = Library.FontColor,
+                        TextColor3 = Library.ElementTextColor,
                         TextXAlignment = Enum.TextXAlignment.Left,
+                        TextTruncate = Enum.TextTruncate.AtEnd,
                         ZIndex = 12,
                         Parent = holder,
                     })
+                    Library:AddToRegistry(dropTitle, { TextColor3 = "ElementTextColor" })
                 end
 
                 local dropButton = Create("TextButton", {
@@ -2521,7 +2707,7 @@ function Groupbox:AddDivider()
                     Font = Enum.Font.Gotham,
                     Text = "",
                     TextSize = 13,
-                    TextColor3 = Library.FontColor,
+                    TextColor3 = Library.ElementTextColor,
                     AutoButtonColor = false,
                     ZIndex = 12,
                     Parent = holder,
@@ -2536,16 +2722,19 @@ function Groupbox:AddDivider()
                     Font = Enum.Font.Gotham,
                     Text = "Select...",
                     TextSize = 13,
-                    TextColor3 = Library.FontColor,
+                    TextColor3 = Library.ElementTextColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextScaled = true,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
                     ZIndex = 13,
                     Parent = dropButton,
                 })
+                Library:AddToRegistry(displayLabel, { TextColor3 = "ElementTextColor" })
                 local dLimit = Instance.new("UITextSizeConstraint")
                 dLimit.MaxTextSize = 13
-                dLimit.MinTextSize = 8
+                dLimit.MinTextSize = 11
                 dLimit.Parent = displayLabel
+                registerSearchItem("Dropdown", text, Tab, Groupbox, holder)
 
                 -- Down arrow indicator (clear dropdown affordance)
                 local arrow = Create("TextLabel", {
@@ -2653,7 +2842,7 @@ function Groupbox:AddDivider()
                         })
                         local oLimit = Instance.new("UITextSizeConstraint")
                         oLimit.MaxTextSize = 13
-                        oLimit.MinTextSize = 8
+                        oLimit.MinTextSize = 11
                         oLimit.Parent = optionBtn
                         Round(optionBtn, 5)
                         optionBtn.MouseButton1Click:Connect(function()
