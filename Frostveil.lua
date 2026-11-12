@@ -1177,8 +1177,8 @@ function Library:CreateWindow(config)
     -- Only 3 pickers control the whole UI
     addColorPickerRow("Accent", "AccentColor")
     addColorPickerRow("Background", "BackgroundColor")
-    addColorPickerRow("Titles / Labels", "FontColor")
-    addColorPickerRow("Buttons / Toggles / Dropdowns", "ElementTextColor")
+    addColorPickerRow("Titles", "FontColor")
+    addColorPickerRow("Text (labels / toggles / buttons / dropdowns / sliders / keybinds)", "ElementTextColor")
 
     -- Background texture dropdown
     Create("TextLabel", {
@@ -2288,16 +2288,19 @@ function Library:CreateWindow(config)
                     Font = Enum.Font.Gotham,
                     Text = text,
                     TextSize = 13,
-                    TextColor3 = Library.FontColor,
+                    TextColor3 = Library.ElementTextColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextScaled = true,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
                     ZIndex = 12,
                     Parent = holder,
                 })
+                Library:AddToRegistry(sliderLabel, { TextColor3 = "ElementTextColor" })
                 local sLimit = Instance.new("UITextSizeConstraint")
                 sLimit.MaxTextSize = 13
                 sLimit.MinTextSize = 11
                 sLimit.Parent = sliderLabel
+                registerSearchItem("Slider", text, Tab, Groupbox, holder)
 
                 local valueLabel = Create("TextLabel", {
                     BackgroundTransparency = 1,
@@ -2306,12 +2309,14 @@ function Library:CreateWindow(config)
                     Font = Enum.Font.Gotham,
                     Text = tostring(default) .. suffix,
                     TextSize = 13,
-                    TextColor3 = Library.FontColor,
+                    TextColor3 = Library.ElementTextColor,
                     TextXAlignment = Enum.TextXAlignment.Right,
                     TextScaled = true,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
                     ZIndex = 12,
                     Parent = holder,
                 })
+                Library:AddToRegistry(valueLabel, { TextColor3 = "ElementTextColor" })
                 local vLimit = Instance.new("UITextSizeConstraint")
                 vLimit.MaxTextSize = 13
                 vLimit.MinTextSize = 11
@@ -2508,7 +2513,7 @@ function Library:CreateWindow(config)
                     Font = Enum.Font.Gotham,
                     Text = tostring(text),
                     TextSize = 12,
-                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    TextColor3 = Library.ElementTextColor,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Top,
                     TextWrapped = true,
@@ -2517,7 +2522,8 @@ function Library:CreateWindow(config)
                     ZIndex = 11,
                     Parent = box,
                 })
-                Library:AddToRegistry(label, { TextColor3 = "FontColor" })
+                Library:AddToRegistry(label, { TextColor3 = "ElementTextColor" })
+                registerSearchItem("Label", text, Tab, Groupbox, label)
 
                 local function refresh()
                     -- width is driven by parent; height grows with wrapped text
@@ -6879,17 +6885,19 @@ function Library:_CreateKeyPicker(parentBox, index, info, resizeFn)
         Parent = parentBox,
     })
 
-    Create("TextLabel", {
+    local label = Create("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(1, -90, 1, 0),
         Font = Enum.Font.Gotham,
         Text = text,
         TextSize = 13,
-        TextColor3 = Library.FontColor,
+        TextColor3 = Library.ElementTextColor,
         TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
         ZIndex = 12,
         Parent = holder,
     })
+    Library:AddToRegistry(label, { TextColor3 = "ElementTextColor" })
 
     local keyBtn = Create("TextButton", {
         BackgroundColor3 = Library.BackgroundColor,
@@ -6899,11 +6907,12 @@ function Library:_CreateKeyPicker(parentBox, index, info, resizeFn)
         Font = Enum.Font.GothamMedium,
         Text = tostring(default),
         TextSize = 12,
-        TextColor3 = Library.FontColor,
+        TextColor3 = Library.ElementTextColor,
         AutoButtonColor = false,
         ZIndex = 12,
         Parent = holder,
     })
+    Library:AddToRegistry(keyBtn, { TextColor3 = "ElementTextColor" })
     Round(keyBtn, 6)
     Stroke(keyBtn, Library.OutlineColor, 1, 0.45)
 
