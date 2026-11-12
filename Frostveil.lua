@@ -6942,7 +6942,7 @@ function Library:ShowLoadingScreen(opts)
     gui.Name = "FrostveilLoadingVerse"
     gui.ResetOnSpawn = false
     gui.IgnoreGuiInset = true
-    gui.DisplayOrder = 10000
+    gui.DisplayOrder = 2147483647
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     if type(ProtectAndParent) == "function" then
         ProtectAndParent(gui)
@@ -6955,13 +6955,16 @@ function Library:ShowLoadingScreen(opts)
         end
     end
 
-    -- Dim overlay (matches Frostveil void feel)
+    -- Full-screen cover (hides entire menu behind it)
     local overlay = Instance.new("Frame")
     overlay.Name = "Overlay"
     overlay.Size = UDim2.fromScale(1, 1)
+    overlay.Position = UDim2.fromScale(0, 0)
     overlay.BackgroundColor3 = bg
     overlay.BackgroundTransparency = 1
     overlay.BorderSizePixel = 0
+    overlay.ZIndex = 100
+    overlay.Active = true -- block clicks to UI underneath
     overlay.Parent = gui
 
     -- Card
@@ -6973,6 +6976,7 @@ function Library:ShowLoadingScreen(opts)
     card.BackgroundColor3 = main
     card.BackgroundTransparency = 1
     card.BorderSizePixel = 0
+    card.ZIndex = 110
     card.Parent = gui
     do
         local corner = Instance.new("UICorner")
@@ -7047,9 +7051,9 @@ function Library:ShowLoadingScreen(opts)
     textLabel.TextTransparency = 1
     textLabel.Parent = card
 
-    -- Fade in
-    TweenService:Create(overlay, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.35 }):Play()
-    TweenService:Create(card, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.05 }):Play()
+    -- Fade in — solid full-screen cover so menu is fully hidden
+    TweenService:Create(overlay, TweenInfo.new(fadeIn), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(card, TweenInfo.new(fadeIn), { BackgroundTransparency = 0 }):Play()
     TweenService:Create(stroke, TweenInfo.new(fadeIn), { Transparency = 0.45 }):Play()
     TweenService:Create(accentLine, TweenInfo.new(fadeIn), { BackgroundTransparency = 0.25 }):Play()
     TweenService:Create(refLabel, TweenInfo.new(fadeIn + 0.1), { TextTransparency = 0 }):Play()
@@ -7070,13 +7074,26 @@ function Library:ShowLoadingScreen(opts)
     return gui
 end
 
--- Auto-show once when the library is first required
+-- Auto-show once when the library is first required (covers whole UI)
 task.defer(function()
     pcall(function()
         if getgenv()._FrostveilVerseShown then return end
         getgenv()._FrostveilVerseShown = true
         if Library and type(Library.ShowLoadingScreen) == "function" then
+            -- hide main menu while verse is up
+            local wasVisible = true
+            pcall(function()
+                if ScreenGui then
+                    wasVisible = ScreenGui.Enabled
+                    ScreenGui.Enabled = false
+                end
+            end)
             Library:ShowLoadingScreen({ Duration = 12 })
+            task.delay(12.9, function()
+                pcall(function()
+                    if ScreenGui then ScreenGui.Enabled = wasVisible end
+                end)
+            end)
         end
     end)
 end)
