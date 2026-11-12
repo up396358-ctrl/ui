@@ -1,4 +1,4 @@
----[[
+--[[
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║   F R O S T V E I L   U I   L I B R A R Y                                    ║
@@ -24,6 +24,14 @@ local CoreGui           = game:GetService("CoreGui")
 local TextService       = game:GetService("TextService")
 local HttpService       = game:GetService("HttpService")
 local GuiService        = game:GetService("GuiService")
+
+local function _typeof(v)
+    if typeof then
+        local ok, r = pcall(typeof, v)
+        if ok then return r end
+    end
+    return type(v)
+end
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse       = nil
@@ -2922,7 +2930,7 @@ local function ensureFolder(folder)
 end
 
 local function serializeValue(v)
-    local t = typeof(v)
+    local t = _typeof(v)
     if t == "Color3" then
         return { __type = "Color3", R = v.R, G = v.G, B = v.B }
     elseif t == "EnumItem" then
