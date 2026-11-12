@@ -1959,8 +1959,7 @@ function Library:CreateWindow(config)
     end))
 
 
-
-         -- ════════════════════════════════════════════════════════════════════════
+    -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
@@ -2004,7 +2003,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = "Close UI", -- Will update dynamically
+            Text = Outer.Visible and "Close UI" or "Open UI",
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2122,8 +2121,8 @@ function Library:CreateWindow(config)
         end)
 
         -- State Refreshers
-        local function refreshToggleFloat(isOpen)
-            if isOpen then
+        local function refreshToggleFloat()
+            if Outer.Visible then
                 ToggleText.Text = "Close UI"
             else
                 ToggleText.Text = "Open UI"
@@ -2142,34 +2141,28 @@ function Library:CreateWindow(config)
             end
         end
 
-        -- Hook into the UI Toggle to accurately update the text
+        -- THE FIX: Listen directly to the property change of the window.
+        -- The exact moment the UI finishes fading out, Outer.Visible turns false and triggers this.
+        Outer:GetPropertyChangedSignal("Visible"):Connect(refreshToggleFloat)
+
+        -- Keep toggle text in sync when using keybind / titlebar min
         local oldToggle = Window.Toggle
         function Window:Toggle()
             oldToggle(self)
-            -- Since oldToggle flips the state, we check if it's currently visible (or going to be hidden)
-            -- Outer.Visible is true when clicked to close.
-            task.defer(function()
-                refreshToggleFloat(not Outer.Visible)
-            end)
         end
-        
         local oldShow = Window.Show
         function Window:Show()
             oldShow(self)
-            task.defer(function() refreshToggleFloat(true) end)
         end
-        
         local oldHide = Window.Hide
         function Window:Hide()
             oldHide(self)
-            task.defer(function() refreshToggleFloat(false) end)
         end
 
-        refreshToggleFloat(Outer.Visible)
+        refreshToggleFloat()
         Window.RefreshLockFloat()
     end
-    
-    
+     
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
     -- ════════════════════════════════════════════════════════════════════════
