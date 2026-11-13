@@ -1964,7 +1964,7 @@ function Library:CreateWindow(config)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
-    Window.FloatUIOpen = true -- Independent state tracker so it changes reliably
+    Window.FloatUIOpen = true -- Start open
 
     if Library.IsMobile then
         -- Main Pill Container
@@ -1981,7 +1981,7 @@ function Library:CreateWindow(config)
             ClipsDescendants = false,
         })
         
-        -- Force the rounded pill shape
+        -- Force the perfect rounded pill shape (fixes the square corners)
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(1, 0)
         corner.Parent = FloatControls
@@ -2009,7 +2009,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = "Close UI", -- Starts as Close UI
+            Text = "Close UI", -- Default since it starts open
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2079,17 +2079,17 @@ function Library:CreateWindow(config)
                     local frameWidth = FloatControls.AbsoluteSize.X
                     
                     if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
-                        -- Left Side Clicked (Open/Close UI)
-                        Window.FloatUIOpen = not Window.FloatUIOpen -- Flip state
+                        -- Left Side Clicked (Toggle UI)
+                        Window.FloatUIOpen = not Window.FloatUIOpen -- Flip our tracked state
                         
-                        -- Update text based on the independent state
+                        -- Since we just flipped the state, if FloatUIOpen is true, we are opening it.
                         if Window.FloatUIOpen then
                             ToggleText.Text = "Close UI"
                         else
                             ToggleText.Text = "Open UI"
                         end
                         
-                        Window:Toggle() -- Trigger the actual menu toggle
+                        Window:Toggle() -- Trigger the actual UI toggle
                         
                         TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
                         task.delay(0.05, function()
