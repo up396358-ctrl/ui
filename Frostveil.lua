@@ -1962,7 +1962,7 @@ function Library:CreateWindow(config)
        -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
-   Outer:SetAttribute("DragLocked", false)
+ Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
 
     if Library.IsMobile then
@@ -1972,8 +1972,8 @@ function Library:CreateWindow(config)
             BackgroundColor3 = Library.BackgroundColor,
             BackgroundTransparency = 0.1,
             BorderSizePixel = 0,
-            Size = UDim2.fromOffset(140, 32), -- Wider to fit text
-            Position = UDim2.new(1, -155, 1, -50), -- Bottom right positioning
+            Size = UDim2.fromOffset(140, 32), 
+            Position = UDim2.new(1, -155, 1, -50), 
             AnchorPoint = Vector2.new(0, 0),
             ZIndex = 250,
             Parent = ScreenGui,
@@ -2003,7 +2003,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = "Toggle UI", -- Static text
+            Text = "Toggle UI", -- THIS IS NOW HARDCODED AS TOGGLE UI
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2022,7 +2022,7 @@ function Library:CreateWindow(config)
             Parent = FloatControls,
         })
 
-        -- Input Detector (Handles Dragging and Clicking)
+        -- Input Detector
         local InputDetector = Create("TextButton", {
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
@@ -2135,6 +2135,7 @@ function Library:CreateWindow(config)
 
         Window.RefreshLockFloat()
     end
+
 
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
