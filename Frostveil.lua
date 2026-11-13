@@ -1959,11 +1959,12 @@ function Library:CreateWindow(config)
     end))
 
 
-       -- ════════════════════════════════════════════════════════════════════════
+    -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
- Outer:SetAttribute("DragLocked", false)
+    Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
+    Window.FloatUIOpen = true -- Independent state tracker so it changes reliably
 
     if Library.IsMobile then
         -- Main Pill Container
@@ -1979,7 +1980,12 @@ function Library:CreateWindow(config)
             Parent = ScreenGui,
             ClipsDescendants = false,
         })
-        Round(FloatControls, UDim.new(1, 0))
+        
+        -- Force the rounded pill shape
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = FloatControls
+
         local mainStroke = Stroke(FloatControls, Library.OutlineColor, 1, 0.5)
         Window.FloatControls = FloatControls
 
@@ -2003,7 +2009,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = "Toggle UI", -- THIS IS NOW HARDCODED AS TOGGLE UI
+            Text = "Close UI", -- Starts as Close UI
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2073,8 +2079,18 @@ function Library:CreateWindow(config)
                     local frameWidth = FloatControls.AbsoluteSize.X
                     
                     if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
-                        -- Left Side Clicked (Toggle UI)
-                        Window:Toggle()
+                        -- Left Side Clicked (Open/Close UI)
+                        Window.FloatUIOpen = not Window.FloatUIOpen -- Flip state
+                        
+                        -- Update text based on the independent state
+                        if Window.FloatUIOpen then
+                            ToggleText.Text = "Close UI"
+                        else
+                            ToggleText.Text = "Open UI"
+                        end
+                        
+                        Window:Toggle() -- Trigger the actual menu toggle
+                        
                         TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
                         task.delay(0.05, function()
                             TweenService:Create(uiScale, TweenInfo.new(0.1), { Scale = 1.05 }):Play()
@@ -2135,7 +2151,6 @@ function Library:CreateWindow(config)
 
         Window.RefreshLockFloat()
     end
-
 
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
