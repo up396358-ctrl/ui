@@ -1964,6 +1964,7 @@ function Library:CreateWindow(config)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
+    Window.UIOpen = true -- Tracks the state exactly like Lock
 
     if Library.IsMobile then
         -- Main Pill Container
@@ -1972,8 +1973,8 @@ function Library:CreateWindow(config)
             BackgroundColor3 = Library.BackgroundColor,
             BackgroundTransparency = 0.1,
             BorderSizePixel = 0,
-            Size = UDim2.fromOffset(140, 32), -- Wider to fit text
-            Position = UDim2.new(1, -155, 1, -50), -- Bottom right positioning
+            Size = UDim2.fromOffset(140, 32),
+            Position = UDim2.new(1, -155, 1, -50),
             AnchorPoint = Vector2.new(0, 0),
             ZIndex = 250,
             Parent = ScreenGui,
@@ -2074,6 +2075,9 @@ function Library:CreateWindow(config)
                     
                     if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
                         -- Left Side Clicked (Open/Close UI)
+                        Window.UIOpen = not Window.UIOpen -- Flip state
+                        ToggleText.Text = Window.UIOpen and "Close UI" or "Open UI" -- Update text instantly
+                        
                         Window:Toggle()
                         TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
                         task.delay(0.05, function()
@@ -2120,16 +2124,6 @@ function Library:CreateWindow(config)
             end
         end)
 
-        -- State Refreshers
-        local function refreshToggleFloat()
-            -- Checks if the Window is currently visible. If yes, it can be closed.
-            if Outer.Visible then
-                ToggleText.Text = "Close UI"
-            else
-                ToggleText.Text = "Open UI"
-            end
-        end
-
         Window.RefreshLockFloat = function()
             if Window.DragLocked then
                 LockText.Text = "Unlock UI"
@@ -2142,20 +2136,15 @@ function Library:CreateWindow(config)
             end
         end
 
-        -- Hook directly into the animation functions for immediate visual feedback
-        local oldAnimateShow = animateShow
-        function animateShow()
-            oldAnimateShow()
-            refreshToggleFloat()
+        -- Hook into the API so if you close the menu with a keybind, it stays in sync
+        local oldToggle = Window.Toggle
+        function Window:Toggle()
+            oldToggle(self)
+            -- Flip state and update text to keep it in sync if toggled externally
+            Window.UIOpen = not Window.UIOpen
+            ToggleText.Text = Window.UIOpen and "Close UI" or "Open UI"
         end
 
-        local oldAnimateHide = animateHide
-        function animateHide()
-            oldAnimateHide()
-            refreshToggleFloat()
-        end
-
-        refreshToggleFloat()
         Window.RefreshLockFloat()
     end
      
