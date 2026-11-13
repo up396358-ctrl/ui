@@ -1962,9 +1962,8 @@ function Library:CreateWindow(config)
        -- ════════════════════════════════════════════════════════════════════════
     -- FLOATING TOGGLE + LOCK (Mobile Only)
     -- ════════════════════════════════════════════════════════════════════════
-    Outer:SetAttribute("DragLocked", false)
+   Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
-    Window.UIOpen = true -- Tracks the state exactly like Lock
 
     if Library.IsMobile then
         -- Main Pill Container
@@ -1973,8 +1972,8 @@ function Library:CreateWindow(config)
             BackgroundColor3 = Library.BackgroundColor,
             BackgroundTransparency = 0.1,
             BorderSizePixel = 0,
-            Size = UDim2.fromOffset(140, 32),
-            Position = UDim2.new(1, -155, 1, -50),
+            Size = UDim2.fromOffset(140, 32), -- Wider to fit text
+            Position = UDim2.new(1, -155, 1, -50), -- Bottom right positioning
             AnchorPoint = Vector2.new(0, 0),
             ZIndex = 250,
             Parent = ScreenGui,
@@ -2004,7 +2003,7 @@ function Library:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0.5, -2, 1, 0),
             Font = Enum.Font.GothamMedium,
-            Text = "Close UI",
+            Text = "Toggle UI", -- Static text
             TextSize = 12,
             TextColor3 = Library.FontColor,
             ZIndex = 253,
@@ -2023,7 +2022,7 @@ function Library:CreateWindow(config)
             Parent = FloatControls,
         })
 
-        -- Input Detector
+        -- Input Detector (Handles Dragging and Clicking)
         local InputDetector = Create("TextButton", {
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1, 1),
@@ -2074,10 +2073,7 @@ function Library:CreateWindow(config)
                     local frameWidth = FloatControls.AbsoluteSize.X
                     
                     if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
-                        -- Left Side Clicked (Open/Close UI)
-                        Window.UIOpen = not Window.UIOpen -- Flip state
-                        ToggleText.Text = Window.UIOpen and "Close UI" or "Open UI" -- Update text instantly
-                        
+                        -- Left Side Clicked (Toggle UI)
                         Window:Toggle()
                         TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
                         task.delay(0.05, function()
@@ -2124,6 +2120,7 @@ function Library:CreateWindow(config)
             end
         end)
 
+        -- State Refreshers
         Window.RefreshLockFloat = function()
             if Window.DragLocked then
                 LockText.Text = "Unlock UI"
@@ -2136,18 +2133,9 @@ function Library:CreateWindow(config)
             end
         end
 
-        -- Hook into the API so if you close the menu with a keybind, it stays in sync
-        local oldToggle = Window.Toggle
-        function Window:Toggle()
-            oldToggle(self)
-            -- Flip state and update text to keep it in sync if toggled externally
-            Window.UIOpen = not Window.UIOpen
-            ToggleText.Text = Window.UIOpen and "Close UI" or "Open UI"
-        end
-
         Window.RefreshLockFloat()
     end
-     
+
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
     -- ════════════════════════════════════════════════════════════════════════
