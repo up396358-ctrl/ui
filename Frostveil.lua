@@ -1250,10 +1250,10 @@ function Library:CreateWindow(config)
         Parent = SettingsScroll,
     })
     -- Only 3 pickers control the whole UI
-       addColorPickerRow("Accent",               "AccentColor")
-       addColorPickerRow("Background",           "BackgroundColor")
-       addColorPickerRow("Titles",               "FontColor")
-       addColorPickerRow("Text color picker )",  "ElementTextColor")
+    addColorPickerRow("Accent", "AccentColor")
+    addColorPickerRow("Background", "BackgroundColor")
+    addColorPickerRow("Titles", "FontColor")
+    addColorPickerRow("Text (labels / toggles / buttons / dropdowns / sliders / keybinds)", "ElementTextColor")
 
     -- Background texture dropdown
     Create("TextLabel", {
@@ -1271,10 +1271,10 @@ function Library:CreateWindow(config)
         { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
-        { Name = "Patrick", Id = "98569609705523" },
-        { Name = "Pocoyo", Id = "75503978377990" },
+        { Name = "Patrick", Id = "130152189846750" },
+        { Name = "Pocoyo", Id = "134844262260089" },
         { Name = "The Thinker", Id = "71890428605210" },
-        { Name = "Hwz", Id = "139744518359531" },
+        { Name = "Hwz", Id = "134780559674403" },
         { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
         { Name = "100$", Id = "76496312144969" },
@@ -1949,9 +1949,17 @@ function Library:CreateWindow(config)
         Library.ToggleKeybind = "RightShift"
     end
     Library:GiveSignal(UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
+        -- Allow menu toggle even if UI is open; only block while typing in a textbox
+        if UserInputService:GetFocusedTextBox() then return end
         if input.UserInputType == Enum.UserInputType.Keyboard then
             local keyName = input.KeyCode.Name
+            if keyName == tostring(Library.ToggleKeybind) then
+                Window:Toggle()
+            end
+        elseif input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.MouseButton2 then
+            -- mouse binds for menu if user set them
+            local keyName = input.UserInputType.Name
             if keyName == tostring(Library.ToggleKeybind) then
                 Window:Toggle()
             end
@@ -1960,198 +1968,122 @@ function Library:CreateWindow(config)
 
 
     -- ════════════════════════════════════════════════════════════════════════
-    -- FLOATING TOGGLE + LOCK (Mobile Only)
+    -- FLOATING TOGGLE + LOCK (always on screen — mobile friendly)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
-    Window.FloatUIOpen = true -- Start open
 
-    if Library.IsMobile then
-        -- Main Pill Container
-        local FloatControls = Create("Frame", {
-            Name = "FrostveilFloatControls",
-            BackgroundColor3 = Library.BackgroundColor,
-            BackgroundTransparency = 0.1,
+    local FloatControls = Create("Frame", {
+        Name = "FrostveilFloatControls",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(108, 48),
+        Position = UDim2.new(1, -120, 1, -64),
+        AnchorPoint = Vector2.new(0, 0),
+        ZIndex = 250,
+        Parent = ScreenGui,
+    })
+    Window.FloatControls = FloatControls
+
+    local function makeFloatBtn(name, text, order, color)
+        local b = Create("TextButton", {
+            Name = name,
+            BackgroundColor3 = color or Color3.fromRGB(16, 20, 30),
+            BackgroundTransparency = 0.12,
             BorderSizePixel = 0,
-            Size = UDim2.fromOffset(140, 32), 
-            Position = UDim2.new(1, -155, 1, -50), 
-            AnchorPoint = Vector2.new(0, 0),
-            ZIndex = 250,
-            Parent = ScreenGui,
-            ClipsDescendants = false,
-        })
-        
-        -- Force the perfect rounded pill shape (fixes the square corners)
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(1, 0)
-        corner.Parent = FloatControls
-
-        local mainStroke = Stroke(FloatControls, Library.OutlineColor, 1, 0.5)
-        Window.FloatControls = FloatControls
-
-        local uiScale = Instance.new("UIScale")
-        uiScale.Scale = 1
-        uiScale.Parent = FloatControls
-
-        -- Divider Line
-        Create("Frame", {
-            BackgroundColor3 = Library.OutlineColor,
-            BackgroundTransparency = 0.3,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0, 1, 1, -12),
-            Position = UDim2.new(0.5, 0, 0, 6),
+            Size = UDim2.fromOffset(48, 48),
+            Position = UDim2.fromOffset(order * 54, 0),
+            Font = Enum.Font.GothamBold,
+            Text = text,
+            TextSize = 18,
+            TextColor3 = Color3.fromRGB(240, 245, 255),
+            AutoButtonColor = false,
             ZIndex = 251,
             Parent = FloatControls,
         })
+        Round(b, 12)
+        Stroke(b, Library.AccentColor, 1.2, 0.4)
+        return b
+    end
 
-        -- Text Labels
-        local ToggleText = Create("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -2, 1, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = "Close UI", -- Default since it starts open
-            TextSize = 12,
-            TextColor3 = Library.FontColor,
-            ZIndex = 253,
-            Parent = FloatControls,
-        })
+    local ToggleFloat = makeFloatBtn("ToggleMenu", "☰", 0, Color3.fromRGB(14, 22, 36))
+    local LockFloat = makeFloatBtn("LockMenu", "🔓", 1, Color3.fromRGB(14, 22, 36))
 
-        local LockText = Create("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -2, 1, 0),
-            Position = UDim2.new(0.5, 2, 0, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = Window.DragLocked and "Unlock UI" or "Lock UI",
-            TextSize = 12,
-            TextColor3 = Library.FontColor,
-            ZIndex = 253,
-            Parent = FloatControls,
-        })
+    local function refreshToggleFloat()
+        if Outer.Visible then
+            ToggleFloat.Text = "☰"
+            ToggleFloat.BackgroundColor3 = Color3.fromRGB(14, 22, 36)
+        else
+            ToggleFloat.Text = "☰"
+            ToggleFloat.BackgroundColor3 = Color3.fromRGB(28, 40, 60)
+        end
+    end
 
-        -- Input Detector
-        local InputDetector = Create("TextButton", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            ZIndex = 260, 
-            Parent = FloatControls,
-        })
+    local function refreshLockFloat()
+        if Window.DragLocked then
+            LockFloat.Text = "🔒"
+            LockFloat.BackgroundColor3 = Color3.fromRGB(40, 28, 20)
+        else
+            LockFloat.Text = "🔓"
+            LockFloat.BackgroundColor3 = Color3.fromRGB(14, 22, 36)
+        end
+    end
 
-        local dragging = false
-        local dragStart = nil
-        local startPos = nil
-        local dragMoved = false
-        local clickStartPos = nil
-
-        InputDetector.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragMoved = false
-                dragStart = input.Position
-                startPos = FloatControls.Position
-                clickStartPos = input.Position
+    ToggleFloat.MouseButton1Click:Connect(function()
+        Window:Toggle()
+        task.defer(refreshToggleFloat)
+    end)
+    LockFloat.MouseButton1Click:Connect(function()
+        Window.DragLocked = not Window.DragLocked
+        Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
+        -- also lock settings panel drag if present
+        pcall(function()
+            if SettingsPanel then
+                SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
             end
         end)
+        refreshLockFloat()
+        if Library.Notify then
+            Library:Notify(Window.DragLocked and "UI Locked — can't move" or "UI Unlocked — drag enabled", 1.5)
+        end
+    end)
 
-        Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
-                    dragMoved = true
-                end
-                
-                if dragMoved then
-                    FloatControls.Position = UDim2.new(
-                        startPos.X.Scale, startPos.X.Offset + delta.X,
-                        startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                    )
-                end
-            end
-        end))
+    -- keep toggle icon in sync when using keybind / titlebar min
+    local oldToggle = Window.Toggle
+    function Window:Toggle()
+        oldToggle(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldShow = Window.Show
+    function Window:Show()
+        oldShow(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldHide = Window.Hide
+    function Window:Hide()
+        oldHide(self)
+        task.defer(refreshToggleFloat)
+    end
 
-        Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                dragging = false
-                
-                if not dragMoved then
-                    local clickX = clickStartPos.X
-                    local frameAbsX = FloatControls.AbsolutePosition.X
-                    local frameWidth = FloatControls.AbsoluteSize.X
-                    
-                    if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
-                        -- Left Side Clicked (Toggle UI)
-                        Window.FloatUIOpen = not Window.FloatUIOpen -- Flip our tracked state
-                        
-                        -- Since we just flipped the state, if FloatUIOpen is true, we are opening it.
-                        if Window.FloatUIOpen then
-                            ToggleText.Text = "Close UI"
-                        else
-                            ToggleText.Text = "Open UI"
-                        end
-                        
-                        Window:Toggle() -- Trigger the actual UI toggle
-                        
-                        TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
-                        task.delay(0.05, function()
-                            TweenService:Create(uiScale, TweenInfo.new(0.1), { Scale = 1.05 }):Play()
-                        end)
-                    
-                    elseif clickX >= (frameAbsX + frameWidth / 2) and clickX <= (frameAbsX + frameWidth) then
-                        -- Right Side Clicked (Lock/Unlock UI)
-                        Window.DragLocked = not Window.DragLocked
-                        Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
-                        pcall(function()
-                            if SettingsPanel then
-                                SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
-                            end
-                        end)
-                        Window.RefreshLockFloat()
-                    end
-                end
-            end
-        end))
-
-        -- Hover Animations
-        InputDetector.MouseEnter:Connect(function()
-            TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1.05 }):Play()
-            if not Window.DragLocked then
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.AccentColor, Transparency = 0.2 }):Play()
-            end
-            TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-            if not Window.DragLocked then
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-            end
-        end)
-
-        InputDetector.MouseLeave:Connect(function()
-            if not dragging then
-                TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
-                if not Window.DragLocked then
-                    TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
-                end
-                TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                if not Window.DragLocked then
-                    TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                end
-            end
-        end)
-
-        -- State Refreshers
-        Window.RefreshLockFloat = function()
-            if Window.DragLocked then
-                LockText.Text = "Unlock UI"
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.RiskColor }):Play()
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.RiskColor, Transparency = 0.1 }):Play()
-            else
-                LockText.Text = "Lock UI"
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
+    local function updateFloatVisibility()
+        local show = Library.IsMobile or Window.IsMobile or isMobile
+        FloatControls.Visible = show and true or false
+    end
+    updateFloatVisibility()
+    -- keep in sync when viewport / layout changes
+    pcall(function()
+        if Window.ApplyMobileLayout then
+            local prev = Window.ApplyMobileLayout
+            function Window.ApplyMobileLayout()
+                prev()
+                updateFloatVisibility()
             end
         end
+    end)
 
-        Window.RefreshLockFloat()
-    end
-    
+    refreshToggleFloat()
+    refreshLockFloat()
+    updateFloatVisibility()
+
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
     -- ════════════════════════════════════════════════════════════════════════
@@ -2501,23 +2433,30 @@ function Library:CreateWindow(config)
                 }
 
                 local function SetValue(value, noCallback)
+                    -- support both Toggle:SetValue(bool) and Toggle.SetValue(bool)
+                    if type(value) == "table" then
+                        -- called with colon; real value is noCallback
+                        value, noCallback = noCallback, nil
+                    end
                     state = value and true or false
                     ToggleObject.Value = state
                     local targetPos = state and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
                     local targetColor = state and Library.ToggleOnColor or Library.ToggleOffColor
-                    local info = TweenInfo.new(0.28, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-                    TweenService:Create(knob, info, { Position = targetPos }):Play()
-                    TweenService:Create(track, info, { BackgroundColor3 = targetColor }):Play()
+                    local tweenInfo = TweenInfo.new(0.28, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+                    TweenService:Create(knob, tweenInfo, { Position = targetPos }):Play()
+                    TweenService:Create(track, tweenInfo, { BackgroundColor3 = targetColor }):Play()
                     if not noCallback and callback then
                         Library:SafeCallback(callback, state)
                     end
                 end
 
-                ToggleObject.SetValue = SetValue
+                function ToggleObject:SetValue(value, noCallback)
+                    SetValue(value, noCallback)
+                end
                 ToggleObject.OnChanged = function(_, cb)
                     callback = cb
                 end
-                ToggleObject.SetValue(default, true)
+                SetValue(default, true)
 
                 local clickArea = Create("TextButton", {
                     BackgroundTransparency = 1,
@@ -7245,20 +7184,29 @@ function Library:_CreateKeyPicker(parentBox, index, info, resizeFn)
     end)
 
     Library:GiveSignal(UserInputService.InputBegan:Connect(function(input, gp)
-        if gp or listening then return end
+        if listening then return end
+        if UserInputService:GetFocusedTextBox() then return end
+        local matched = false
         if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == KeyObject.Value then
-            if mode == "Toggle" then
-                KeyObject.Toggled = not KeyObject.Toggled
-                if syncToggle and Toggles[syncToggle] then
-                    Toggles[syncToggle]:SetValue(KeyObject.Toggled)
-                end
-            elseif mode == "Hold" then
-                KeyObject.Toggled = true
-                if syncToggle and Toggles[syncToggle] then
-                    Toggles[syncToggle]:SetValue(true)
-                end
+            matched = true
+        elseif KeyObject.Value == "MouseButton1" and input.UserInputType == Enum.UserInputType.MouseButton1 then
+            matched = true
+        elseif KeyObject.Value == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2 then
+            matched = true
+        end
+        if not matched then return end
+        if mode == "Toggle" then
+            KeyObject.Toggled = not KeyObject.Toggled
+            if syncToggle and Toggles[syncToggle] then
+                Toggles[syncToggle]:SetValue(KeyObject.Toggled)
             end
-            if callback then Library:SafeCallback(callback, KeyObject.Value, KeyObject.Toggled) end
+            if callback then Library:SafeCallback(callback, KeyObject.Toggled) end
+        elseif mode == "Hold" then
+            KeyObject.Toggled = true
+            if syncToggle and Toggles[syncToggle] then
+                Toggles[syncToggle]:SetValue(true)
+            end
+            if callback then Library:SafeCallback(callback, true) end
         end
     end))
 
