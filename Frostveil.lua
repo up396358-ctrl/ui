@@ -1253,7 +1253,7 @@ function Library:CreateWindow(config)
     addColorPickerRow("Accent", "AccentColor")
     addColorPickerRow("Background", "BackgroundColor")
     addColorPickerRow("Titles", "FontColor")
-    addColorPickerRow("Text (labels / toggles / buttons / dropdowns / sliders / keybinds)", "ElementTextColor")
+    addColorPickerRow("Text color picker", "ElementTextColor")
 
     -- Background texture dropdown
     Create("TextLabel", {
