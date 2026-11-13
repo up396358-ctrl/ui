@@ -1250,10 +1250,10 @@ function Library:CreateWindow(config)
         Parent = SettingsScroll,
     })
     -- Only 3 pickers control the whole UI
-    addColorPickerRow("Accent", "AccentColor")
-    addColorPickerRow("Background", "BackgroundColor")
-    addColorPickerRow("Titles", "FontColor")
-    addColorPickerRow("Text (labels / toggles / buttons / dropdowns / sliders / keybinds)", "ElementTextColor")
+       addColorPickerRow("Accent",               "AccentColor")
+       addColorPickerRow("Background",           "BackgroundColor")
+       addColorPickerRow("Titles",               "FontColor")
+       addColorPickerRow("Text color picker )",  "ElementTextColor")
 
     -- Background texture dropdown
     Create("TextLabel", {
