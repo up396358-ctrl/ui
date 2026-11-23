@@ -1,20 +1,4 @@
---[[
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║   F R O S T V E I L   U I   L I B R A R Y                                    ║
-║   Version 2.0.0                                                              ║
-║                                                                              ║
-║   Complete custom Roblox UI library.                                         ║
-║   Public API mirrors LinoriaLib for familiarity.                             ║
-║   Visual design is original — left sidebar + content layout                  ║
-║   inspired by reference, polished into an icy / dark premium aesthetic.      ║
-║   No logo watermark. Full background texture (asset id) support.             ║
-║   Live falling snow particle system.                                         ║
-║                                                                              ║
-║   Intended for GitHub distribution.                                          ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-]]
+
 
 local Players           = game:GetService("Players")
 local TweenService      = game:GetService("TweenService")
