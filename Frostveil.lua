@@ -2577,12 +2577,13 @@ function Library:CreateWindow(config)
                 end
                 SetValue(default, true)
 
+                -- Only the switch toggles — label/name is not clickable
                 local clickArea = Create("TextButton", {
                     BackgroundTransparency = 1,
                     Size = UDim2.fromScale(1, 1),
                     Text = "",
                     ZIndex = 14,
-                    Parent = holder,
+                    Parent = track,
                 })
                 clickArea.MouseButton1Click:Connect(function()
                     SetValue(not state)
