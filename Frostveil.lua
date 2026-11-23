@@ -819,10 +819,10 @@ function Library:CreateWindow(config)
             uiScale.Scale = 1
             return
         end
-        -- Same shape as PC, just scaled to fit the screen
-        local padX, padY = 0.96, 0.88
+        -- Same shape as PC, scaled to fit — keep room so controls aren't cramped
+        local padX, padY = 0.94, 0.90
         local scale = math.min((v.X * padX) / baseW, (v.Y * padY) / baseH)
-        scale = math.clamp(scale, 0.45, 1)
+        scale = math.clamp(scale, 0.55, 1)
         uiScale.Scale = scale
     end
     Window.ApplyMobileLayout = applyMobileLayout
@@ -1253,7 +1253,7 @@ function Library:CreateWindow(config)
     addColorPickerRow("Accent", "AccentColor")
     addColorPickerRow("Background", "BackgroundColor")
     addColorPickerRow("Titles", "FontColor")
-    addColorPickerRow("Text color picker", "ElementTextColor")
+    addColorPickerRow("Text (labels / toggles / buttons / dropdowns / sliders / keybinds)", "ElementTextColor")
 
     -- Background texture dropdown
     Create("TextLabel", {
@@ -1271,10 +1271,10 @@ function Library:CreateWindow(config)
         { Name = "Original", Id = "125296886011244" },
         { Name = "Money", Id = "123207755204057" },
         { Name = "SpongeBob", Id = "113644467007667" },
-        { Name = "Patrick", Id = "98569609705523" },
-        { Name = "Pocoyo", Id = "75503978377990" },
+        { Name = "Patrick", Id = "130152189846750" },
+        { Name = "Pocoyo", Id = "134844262260089" },
         { Name = "The Thinker", Id = "71890428605210" },
-        { Name = "Hwz", Id = "139744518359531" },
+        { Name = "Hwz", Id = "134780559674403" },
         { Name = "Rick n Morty", Id = "93561351506989" },
         { Name = "Hollowoodz", Id = "120607586298139" },
         { Name = "100$", Id = "76496312144969" },
@@ -1852,18 +1852,18 @@ function Library:CreateWindow(config)
     end
 
     -- Sidebar (scrollable tab list)
-    local sidebarWidth = 158
+    local sidebarWidth = isMobile and 170 or 164
     local Sidebar = Create("ScrollingFrame", {
         Name = "Sidebar",
         BackgroundColor3 = Library.SidebarColor,
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        Size = UDim2.new(0, sidebarWidth, 1, -44),
-        Position = UDim2.fromOffset(0, 44),
+        Size = UDim2.new(0, sidebarWidth, 1, -48),
+        Position = UDim2.fromOffset(0, 48),
         Parent = Outer,
         ZIndex = 8,
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = isMobile and 3 or 0,
+        ScrollBarThickness = isMobile and 4 or 0,
         ScrollBarImageColor3 = Library.AccentColor,
         ScrollingEnabled = true,
         ElasticBehavior = Enum.ElasticBehavior.Never,
@@ -1871,16 +1871,16 @@ function Library:CreateWindow(config)
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     Library:AddToRegistry(Sidebar, { BackgroundColor3 = "SidebarColor" })
-    ListLayout(Sidebar, 6)
-    Padding(Sidebar, 16, 14, 12, 12)
+    ListLayout(Sidebar, isMobile and 10 or 8)
+    Padding(Sidebar, isMobile and 18 or 16, isMobile and 16 or 14, isMobile and 14 or 12, isMobile and 14 or 12)
 
-    -- Content holder (same layout as PC)
-    local contentPad = sidebarWidth + 10
+    -- Content holder (more gap from sidebar so columns aren't tight)
+    local contentPad = sidebarWidth + (isMobile and 14 or 12)
     local ContentHolder = Create("Frame", {
         Name = "ContentHolder",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -(contentPad + 6), 1, -58),
-        Position = UDim2.fromOffset(contentPad, 54),
+        Size = UDim2.new(1, -(contentPad + 10), 1, -64),
+        Position = UDim2.fromOffset(contentPad, 58),
         Parent = Outer,
         ZIndex = 8,
         ClipsDescendants = true,
@@ -1967,198 +1967,122 @@ function Library:CreateWindow(config)
     end))
 
 
-       -- ════════════════════════════════════════════════════════════════════════
-    -- FLOATING TOGGLE + LOCK (Mobile Only)
+    -- ════════════════════════════════════════════════════════════════════════
+    -- FLOATING TOGGLE + LOCK (always on screen — mobile friendly)
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
-    Window.FloatUIOpen = true -- Start open
 
-    if Library.IsMobile then
-        -- Main Pill Container
-        local FloatControls = Create("Frame", {
-            Name = "FrostveilFloatControls",
-            BackgroundColor3 = Library.BackgroundColor,
-            BackgroundTransparency = 0.1,
+    local FloatControls = Create("Frame", {
+        Name = "FrostveilFloatControls",
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(108, 48),
+        Position = UDim2.new(1, -120, 1, -64),
+        AnchorPoint = Vector2.new(0, 0),
+        ZIndex = 250,
+        Parent = ScreenGui,
+    })
+    Window.FloatControls = FloatControls
+
+    local function makeFloatBtn(name, text, order, color)
+        local b = Create("TextButton", {
+            Name = name,
+            BackgroundColor3 = color or Color3.fromRGB(16, 20, 30),
+            BackgroundTransparency = 0.12,
             BorderSizePixel = 0,
-            Size = UDim2.fromOffset(140, 32), 
-            Position = UDim2.new(1, -155, 1, -50), 
-            AnchorPoint = Vector2.new(0, 0),
-            ZIndex = 250,
-            Parent = ScreenGui,
-            ClipsDescendants = false,
-        })
-        
-        -- Force the perfect rounded pill shape (fixes the square corners)
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(1, 0)
-        corner.Parent = FloatControls
-
-        local mainStroke = Stroke(FloatControls, Library.OutlineColor, 1, 0.5)
-        Window.FloatControls = FloatControls
-
-        local uiScale = Instance.new("UIScale")
-        uiScale.Scale = 1
-        uiScale.Parent = FloatControls
-
-        -- Divider Line
-        Create("Frame", {
-            BackgroundColor3 = Library.OutlineColor,
-            BackgroundTransparency = 0.3,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0, 1, 1, -12),
-            Position = UDim2.new(0.5, 0, 0, 6),
+            Size = UDim2.fromOffset(48, 48),
+            Position = UDim2.fromOffset(order * 54, 0),
+            Font = Enum.Font.GothamBold,
+            Text = text,
+            TextSize = 18,
+            TextColor3 = Color3.fromRGB(240, 245, 255),
+            AutoButtonColor = false,
             ZIndex = 251,
             Parent = FloatControls,
         })
+        Round(b, 12)
+        Stroke(b, Library.AccentColor, 1.2, 0.4)
+        return b
+    end
 
-        -- Text Labels
-        local ToggleText = Create("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -2, 1, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = "Close UI", -- Default since it starts open
-            TextSize = 12,
-            TextColor3 = Library.FontColor,
-            ZIndex = 253,
-            Parent = FloatControls,
-        })
+    local ToggleFloat = makeFloatBtn("ToggleMenu", "☰", 0, Color3.fromRGB(14, 22, 36))
+    local LockFloat = makeFloatBtn("LockMenu", "🔓", 1, Color3.fromRGB(14, 22, 36))
 
-        local LockText = Create("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -2, 1, 0),
-            Position = UDim2.new(0.5, 2, 0, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = Window.DragLocked and "Unlock UI" or "Lock UI",
-            TextSize = 12,
-            TextColor3 = Library.FontColor,
-            ZIndex = 253,
-            Parent = FloatControls,
-        })
+    local function refreshToggleFloat()
+        if Outer.Visible then
+            ToggleFloat.Text = "☰"
+            ToggleFloat.BackgroundColor3 = Color3.fromRGB(14, 22, 36)
+        else
+            ToggleFloat.Text = "☰"
+            ToggleFloat.BackgroundColor3 = Color3.fromRGB(28, 40, 60)
+        end
+    end
 
-        -- Input Detector
-        local InputDetector = Create("TextButton", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            ZIndex = 260, 
-            Parent = FloatControls,
-        })
+    local function refreshLockFloat()
+        if Window.DragLocked then
+            LockFloat.Text = "🔒"
+            LockFloat.BackgroundColor3 = Color3.fromRGB(40, 28, 20)
+        else
+            LockFloat.Text = "🔓"
+            LockFloat.BackgroundColor3 = Color3.fromRGB(14, 22, 36)
+        end
+    end
 
-        local dragging = false
-        local dragStart = nil
-        local startPos = nil
-        local dragMoved = false
-        local clickStartPos = nil
-
-        InputDetector.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragMoved = false
-                dragStart = input.Position
-                startPos = FloatControls.Position
-                clickStartPos = input.Position
+    ToggleFloat.MouseButton1Click:Connect(function()
+        Window:Toggle()
+        task.defer(refreshToggleFloat)
+    end)
+    LockFloat.MouseButton1Click:Connect(function()
+        Window.DragLocked = not Window.DragLocked
+        Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
+        -- also lock settings panel drag if present
+        pcall(function()
+            if SettingsPanel then
+                SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
             end
         end)
+        refreshLockFloat()
+        if Library.Notify then
+            Library:Notify(Window.DragLocked and "UI Locked — can't move" or "UI Unlocked — drag enabled", 1.5)
+        end
+    end)
 
-        Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
-                    dragMoved = true
-                end
-                
-                if dragMoved then
-                    FloatControls.Position = UDim2.new(
-                        startPos.X.Scale, startPos.X.Offset + delta.X,
-                        startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                    )
-                end
-            end
-        end))
+    -- keep toggle icon in sync when using keybind / titlebar min
+    local oldToggle = Window.Toggle
+    function Window:Toggle()
+        oldToggle(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldShow = Window.Show
+    function Window:Show()
+        oldShow(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldHide = Window.Hide
+    function Window:Hide()
+        oldHide(self)
+        task.defer(refreshToggleFloat)
+    end
 
-        Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                dragging = false
-                
-                if not dragMoved then
-                    local clickX = clickStartPos.X
-                    local frameAbsX = FloatControls.AbsolutePosition.X
-                    local frameWidth = FloatControls.AbsoluteSize.X
-                    
-                    if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
-                        -- Left Side Clicked (Toggle UI)
-                        Window.FloatUIOpen = not Window.FloatUIOpen -- Flip our tracked state
-                        
-                        -- Since we just flipped the state, if FloatUIOpen is true, we are opening it.
-                        if Window.FloatUIOpen then
-                            ToggleText.Text = "Close UI"
-                        else
-                            ToggleText.Text = "Open UI"
-                        end
-                        
-                        Window:Toggle() -- Trigger the actual UI toggle
-                        
-                        TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
-                        task.delay(0.05, function()
-                            TweenService:Create(uiScale, TweenInfo.new(0.1), { Scale = 1.05 }):Play()
-                        end)
-                    
-                    elseif clickX >= (frameAbsX + frameWidth / 2) and clickX <= (frameAbsX + frameWidth) then
-                        -- Right Side Clicked (Lock/Unlock UI)
-                        Window.DragLocked = not Window.DragLocked
-                        Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
-                        pcall(function()
-                            if SettingsPanel then
-                                SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
-                            end
-                        end)
-                        Window.RefreshLockFloat()
-                    end
-                end
-            end
-        end))
-
-        -- Hover Animations
-        InputDetector.MouseEnter:Connect(function()
-            TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1.05 }):Play()
-            if not Window.DragLocked then
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.AccentColor, Transparency = 0.2 }):Play()
-            end
-            TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-            if not Window.DragLocked then
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-            end
-        end)
-
-        InputDetector.MouseLeave:Connect(function()
-            if not dragging then
-                TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
-                if not Window.DragLocked then
-                    TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
-                end
-                TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                if not Window.DragLocked then
-                    TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                end
-            end
-        end)
-
-        -- State Refreshers
-        Window.RefreshLockFloat = function()
-            if Window.DragLocked then
-                LockText.Text = "Unlock UI"
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.RiskColor }):Play()
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.RiskColor, Transparency = 0.1 }):Play()
-            else
-                LockText.Text = "Lock UI"
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
+    local function updateFloatVisibility()
+        local show = Library.IsMobile or Window.IsMobile or isMobile
+        FloatControls.Visible = show and true or false
+    end
+    updateFloatVisibility()
+    -- keep in sync when viewport / layout changes
+    pcall(function()
+        if Window.ApplyMobileLayout then
+            local prev = Window.ApplyMobileLayout
+            function Window.ApplyMobileLayout()
+                prev()
+                updateFloatVisibility()
             end
         end
+    end)
 
-        Window.RefreshLockFloat()
-    end
+    refreshToggleFloat()
+    refreshLockFloat()
+    updateFloatVisibility()
 
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
@@ -2182,7 +2106,7 @@ function Library:CreateWindow(config)
             Name = name,
             BackgroundColor3 = Library.MainColor,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 40),
+            Size = UDim2.new(1, 0, 0, isMobile and 44 or 40),
             Font = Enum.Font.GothamMedium,
             Text = name,
             TextSize = 16,
@@ -2219,14 +2143,15 @@ function Library:CreateWindow(config)
         leftScroll.Name = "LeftScroll"
         leftScroll.BackgroundTransparency = 1
         leftScroll.BorderSizePixel = 0
-        leftScroll.Size = UDim2.new(0.5, -8, 1, -8)
-        leftScroll.Position = UDim2.new(0, 4, 0, 4)
+        leftScroll.Size = UDim2.new(0.5, isMobile and -12 or -10, 1, isMobile and -12 or -10)
+        leftScroll.Position = UDim2.new(0, isMobile and 6 or 5, 0, isMobile and 6 or 5)
         leftScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        leftScroll.ScrollBarThickness = isMobile and 4 or 0
+        leftScroll.ScrollBarThickness = isMobile and 5 or 0
         leftScroll.ScrollBarImageColor3 = Library.AccentColor
         leftScroll.ScrollingEnabled = true
-        leftScroll.ElasticBehavior = Enum.ElasticBehavior.Never
+        leftScroll.ElasticBehavior = isMobile and Enum.ElasticBehavior.Always or Enum.ElasticBehavior.Never
         leftScroll.ClipsDescendants = true
+        leftScroll.ScrollingDirection = Enum.ScrollingDirection.Y
         leftScroll.ZIndex = 10
         leftScroll.Parent = container
 
@@ -2242,21 +2167,22 @@ function Library:CreateWindow(config)
         local leftList = Instance.new("UIListLayout")
         leftList.FillDirection = Enum.FillDirection.Vertical
         leftList.SortOrder = Enum.SortOrder.LayoutOrder
-        leftList.Padding = UDim.new(0, 10)
+        leftList.Padding = UDim.new(0, isMobile and 14 or 12)
         leftList.Parent = leftCol
 
         local rightScroll = Instance.new("ScrollingFrame")
         rightScroll.Name = "RightScroll"
         rightScroll.BackgroundTransparency = 1
         rightScroll.BorderSizePixel = 0
-        rightScroll.Size = UDim2.new(0.5, -8, 1, -8)
-        rightScroll.Position = UDim2.new(0.5, 4, 0, 4)
+        rightScroll.Size = UDim2.new(0.5, isMobile and -12 or -10, 1, isMobile and -12 or -10)
+        rightScroll.Position = UDim2.new(0.5, isMobile and 6 or 5, 0, isMobile and 6 or 5)
         rightScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        rightScroll.ScrollBarThickness = isMobile and 4 or 0
+        rightScroll.ScrollBarThickness = isMobile and 5 or 0
         rightScroll.ScrollBarImageColor3 = Library.AccentColor
         rightScroll.ScrollingEnabled = true
-        rightScroll.ElasticBehavior = Enum.ElasticBehavior.Never
+        rightScroll.ElasticBehavior = isMobile and Enum.ElasticBehavior.Always or Enum.ElasticBehavior.Never
         rightScroll.ClipsDescendants = true
+        rightScroll.ScrollingDirection = Enum.ScrollingDirection.Y
         rightScroll.ZIndex = 10
         rightScroll.Parent = container
 
@@ -2272,19 +2198,51 @@ function Library:CreateWindow(config)
         local rightList = Instance.new("UIListLayout")
         rightList.FillDirection = Enum.FillDirection.Vertical
         rightList.SortOrder = Enum.SortOrder.LayoutOrder
-        rightList.Padding = UDim.new(0, 10)
+        rightList.Padding = UDim.new(0, isMobile and 14 or 12)
         rightList.Parent = rightCol
 
         local leftCount, rightCount = 0, 0
 
+        -- UIScale on Outer makes AbsoluteContentSize report scaled pixels.
+        -- CanvasSize is unscaled local space — divide by scale or the last groupboxes
+        -- get clipped and mobile cannot scroll all the way down.
         local function updateCanvas()
-            leftScroll.CanvasSize = UDim2.fromOffset(0, leftList.AbsoluteContentSize.Y + 20)
-            rightScroll.CanvasSize = UDim2.fromOffset(0, rightList.AbsoluteContentSize.Y + 20)
+            local scale = 1
+            pcall(function()
+                if Window.UIScale and Window.UIScale.Scale and Window.UIScale.Scale > 0.01 then
+                    scale = Window.UIScale.Scale
+                elseif uiScale and uiScale.Scale and uiScale.Scale > 0.01 then
+                    scale = uiScale.Scale
+                end
+            end)
+            local bottomPad = isMobile and 96 or 36
+            local leftH = (leftList.AbsoluteContentSize.Y / scale) + bottomPad
+            local rightH = (rightList.AbsoluteContentSize.Y / scale) + bottomPad
+            -- also respect column absolute size (groupbox growth)
+            pcall(function()
+                leftH = math.max(leftH, (leftCol.AbsoluteSize.Y / scale) + bottomPad)
+                rightH = math.max(rightH, (rightCol.AbsoluteSize.Y / scale) + bottomPad)
+            end)
+            leftScroll.CanvasSize = UDim2.fromOffset(0, math.max(0, leftH))
+            rightScroll.CanvasSize = UDim2.fromOffset(0, math.max(0, rightH))
         end
 
-        leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
-        rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+        leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            task.defer(updateCanvas)
+        end)
+        rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            task.defer(updateCanvas)
+        end)
+        -- re-fit when mobile scale changes
+        pcall(function()
+            if Window.UIScale then
+                Window.UIScale:GetPropertyChangedSignal("Scale"):Connect(function()
+                    task.defer(updateCanvas)
+                end)
+            end
+        end)
         task.defer(updateCanvas)
+        task.delay(0.15, updateCanvas)
 
         Tab.Container = container
         Tab.LeftColumn = leftCol
@@ -2426,12 +2384,12 @@ function Library:CreateWindow(config)
             Groupbox.Box = box
             registerSearchItem("Groupbox", titleText, Tab, Groupbox, box)
 
-            local boxList = ListLayout(box, 8)
-            Padding(box, 32, 12, 12, 12)
+            local boxList = ListLayout(box, isMobile and 12 or 10)
+            Padding(box, isMobile and 36 or 34, isMobile and 14 or 12, isMobile and 14 or 12, isMobile and 14 or 12)
 
             local function ResizeBox()
                 -- Fixed sizing so stacked left/right groupboxes fit cleanly
-                local h = math.max(48, boxList.AbsoluteContentSize.Y + 40)
+                local h = math.max(52, boxList.AbsoluteContentSize.Y + (isMobile and 48 or 44))
                 box.Size = UDim2.new(1, 0, 0, h)
                 if Tab.UpdateCanvas then
                     task.defer(Tab.UpdateCanvas)
@@ -2451,7 +2409,7 @@ function Library:CreateWindow(config)
 
                 local holder = Create("Frame", {
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 28),
+                    Size = UDim2.new(1, 0, 0, isMobile and 34 or 30),
                     ZIndex = 11,
                     Parent = box,
                 })
@@ -2563,7 +2521,7 @@ function Library:CreateWindow(config)
 
                 local holder = Create("Frame", {
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 48),
+                    Size = UDim2.new(1, 0, 0, isMobile and 56 or 52),
                     ZIndex = 11,
                     Parent = box,
                 })
@@ -2731,7 +2689,7 @@ function Library:CreateWindow(config)
                     BackgroundColor3 = Color3.fromRGB(20, 28, 42),
                     BackgroundTransparency = 0.55,
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 34),
+                    Size = UDim2.new(1, 0, 0, isMobile and 40 or 36),
                     Font = Enum.Font.GothamMedium,
                     Text = text,
                     TextSize = 13,
@@ -2893,8 +2851,8 @@ function Groupbox:AddDivider()
                 local boxFrame = Create("Frame", {
                     BackgroundColor3 = Library.BackgroundColor,
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 28),
-                    Position = UDim2.fromOffset(0, text and text ~= "" and 22 or 0),
+                    Size = UDim2.new(1, 0, 0, isMobile and 34 or 30),
+                    Position = UDim2.fromOffset(0, text and text ~= "" and 24 or 0),
                     ZIndex = 12,
                     Parent = holder,
                 })
@@ -3005,8 +2963,8 @@ function Groupbox:AddDivider()
                 local dropButton = Create("TextButton", {
                     BackgroundColor3 = Library.BackgroundColor,
                     BorderSizePixel = 0,
-                    Size = UDim2.new(1, 0, 0, 28),
-                    Position = UDim2.fromOffset(0, text and text ~= "" and 22 or 0),
+                    Size = UDim2.new(1, 0, 0, isMobile and 34 or 30),
+                    Position = UDim2.fromOffset(0, text and text ~= "" and 24 or 0),
                     Font = Enum.Font.Gotham,
                     Text = "",
                     TextSize = 13,
