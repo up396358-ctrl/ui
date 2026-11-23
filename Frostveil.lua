@@ -1,4 +1,20 @@
-
+--[[
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║   F R O S T V E I L   U I   L I B R A R Y                                    ║
+║   Version 2.0.0                                                              ║
+║                                                                              ║
+║   Complete custom Roblox UI library.                                         ║
+║   Public API mirrors LinoriaLib for familiarity.                             ║
+║   Visual design is original — left sidebar + content layout                  ║
+║   inspired by reference, polished into an icy / dark premium aesthetic.      ║
+║   No logo watermark. Full background texture (asset id) support.             ║
+║   Live falling snow particle system.                                         ║
+║                                                                              ║
+║   Intended for GitHub distribution.                                          ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+]]
 
 local Players           = game:GetService("Players")
 local TweenService      = game:GetService("TweenService")
@@ -1847,7 +1863,7 @@ function Library:CreateWindow(config)
         Parent = Outer,
         ZIndex = 8,
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = isMobile and 4 or 0,
+        ScrollBarThickness = 0,
         ScrollBarImageColor3 = Library.AccentColor,
         ScrollingEnabled = true,
         ElasticBehavior = Enum.ElasticBehavior.Never,
@@ -1952,199 +1968,207 @@ function Library:CreateWindow(config)
 
 
     -- ════════════════════════════════════════════════════════════════════════
-    -- FLOATING TOGGLE + LOCK (Mobile Only)
+    -- FLOATING TOGGLE + LOCK (Mobile Only) — pill control
     -- ════════════════════════════════════════════════════════════════════════
     Outer:SetAttribute("DragLocked", false)
     Window.DragLocked = false
-    Window.FloatUIOpen = true -- Start open
+    Window.FloatUIOpen = true
 
-    if Library.IsMobile then
-        -- Main Pill Container
-        local FloatControls = Create("Frame", {
-            Name = "FrostveilFloatControls",
-            BackgroundColor3 = Library.BackgroundColor,
-            BackgroundTransparency = 0.1,
-            BorderSizePixel = 0,
-            Size = UDim2.fromOffset(140, 32), 
-            Position = UDim2.new(1, -155, 1, -50), 
-            AnchorPoint = Vector2.new(0, 0),
-            ZIndex = 250,
-            Parent = ScreenGui,
-            ClipsDescendants = false,
-        })
-        
-        -- Force the perfect rounded pill shape (fixes the square corners)
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(1, 0)
-        corner.Parent = FloatControls
+    local FloatControls = Create("Frame", {
+        Name = "FrostveilFloatControls",
+        BackgroundColor3 = Library.BackgroundColor,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(140, 32),
+        Position = UDim2.new(1, -155, 1, -50),
+        AnchorPoint = Vector2.new(0, 0),
+        ZIndex = 250,
+        Parent = ScreenGui,
+        ClipsDescendants = false,
+        Visible = false,
+    })
+    local floatCorner = Instance.new("UICorner")
+    floatCorner.CornerRadius = UDim.new(1, 0)
+    floatCorner.Parent = FloatControls
+    local mainStroke = Stroke(FloatControls, Library.OutlineColor, 1, 0.5)
+    Window.FloatControls = FloatControls
 
-        local mainStroke = Stroke(FloatControls, Library.OutlineColor, 1, 0.5)
-        Window.FloatControls = FloatControls
+    local floatScale = Instance.new("UIScale")
+    floatScale.Scale = 1
+    floatScale.Parent = FloatControls
 
-        local uiScale = Instance.new("UIScale")
-        uiScale.Scale = 1
-        uiScale.Parent = FloatControls
+    Create("Frame", {
+        BackgroundColor3 = Library.OutlineColor,
+        BackgroundTransparency = 0.3,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 1, 1, -12),
+        Position = UDim2.new(0.5, 0, 0, 6),
+        ZIndex = 251,
+        Parent = FloatControls,
+    })
 
-        -- Divider Line
-        Create("Frame", {
-            BackgroundColor3 = Library.OutlineColor,
-            BackgroundTransparency = 0.3,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0, 1, 1, -12),
-            Position = UDim2.new(0.5, 0, 0, 6),
-            ZIndex = 251,
-            Parent = FloatControls,
-        })
+    local ToggleText = Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0.5, -2, 1, 0),
+        Font = Enum.Font.GothamMedium,
+        Text = "Close UI",
+        TextSize = 12,
+        TextColor3 = Library.FontColor,
+        ZIndex = 253,
+        Parent = FloatControls,
+    })
 
-        -- Text Labels
-        local ToggleText = Create("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -2, 1, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = "Close UI", -- Default since it starts open
-            TextSize = 12,
-            TextColor3 = Library.FontColor,
-            ZIndex = 253,
-            Parent = FloatControls,
-        })
+    local LockText = Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0.5, -2, 1, 0),
+        Position = UDim2.new(0.5, 2, 0, 0),
+        Font = Enum.Font.GothamMedium,
+        Text = "Lock UI",
+        TextSize = 12,
+        TextColor3 = Library.FontColor,
+        ZIndex = 253,
+        Parent = FloatControls,
+    })
 
-        local LockText = Create("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0.5, -2, 1, 0),
-            Position = UDim2.new(0.5, 2, 0, 0),
-            Font = Enum.Font.GothamMedium,
-            Text = Window.DragLocked and "Unlock UI" or "Lock UI",
-            TextSize = 12,
-            TextColor3 = Library.FontColor,
-            ZIndex = 253,
-            Parent = FloatControls,
-        })
+    local InputDetector = Create("TextButton", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        Text = "",
+        ZIndex = 260,
+        Parent = FloatControls,
+    })
 
-        -- Input Detector
-        local InputDetector = Create("TextButton", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            ZIndex = 260, 
-            Parent = FloatControls,
-        })
+    local dragging, dragStart, startPos, dragMoved, clickStartPos = false, nil, nil, false, nil
 
-        local dragging = false
-        local dragStart = nil
-        local startPos = nil
-        local dragMoved = false
-        local clickStartPos = nil
+    InputDetector.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragMoved = false
+            dragStart = input.Position
+            startPos = FloatControls.Position
+            clickStartPos = input.Position
+        end
+    end)
 
-        InputDetector.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragMoved = false
-                dragStart = input.Position
-                startPos = FloatControls.Position
-                clickStartPos = input.Position
+    Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
+                dragMoved = true
             end
-        end)
-
-        Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
-                    dragMoved = true
-                end
-                
-                if dragMoved then
-                    FloatControls.Position = UDim2.new(
-                        startPos.X.Scale, startPos.X.Offset + delta.X,
-                        startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                    )
-                end
-            end
-        end))
-
-        Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                dragging = false
-                
-                if not dragMoved then
-                    local clickX = clickStartPos.X
-                    local frameAbsX = FloatControls.AbsolutePosition.X
-                    local frameWidth = FloatControls.AbsoluteSize.X
-                    
-                    if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
-                        -- Left Side Clicked (Toggle UI)
-                        Window.FloatUIOpen = not Window.FloatUIOpen -- Flip our tracked state
-                        
-                        -- Since we just flipped the state, if FloatUIOpen is true, we are opening it.
-                        if Window.FloatUIOpen then
-                            ToggleText.Text = "Close UI"
-                        else
-                            ToggleText.Text = "Open UI"
-                        end
-                        
-                        Window:Toggle() -- Trigger the actual UI toggle
-                        
-                        TweenService:Create(uiScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
-                        task.delay(0.05, function()
-                            TweenService:Create(uiScale, TweenInfo.new(0.1), { Scale = 1.05 }):Play()
-                        end)
-                    
-                    elseif clickX >= (frameAbsX + frameWidth / 2) and clickX <= (frameAbsX + frameWidth) then
-                        -- Right Side Clicked (Lock/Unlock UI)
-                        Window.DragLocked = not Window.DragLocked
-                        Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
-                        pcall(function()
-                            if SettingsPanel then
-                                SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
-                            end
-                        end)
-                        Window.RefreshLockFloat()
-                    end
-                end
-            end
-        end))
-
-        -- Hover Animations
-        InputDetector.MouseEnter:Connect(function()
-            TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1.05 }):Play()
-            if not Window.DragLocked then
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.AccentColor, Transparency = 0.2 }):Play()
-            end
-            TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-            if not Window.DragLocked then
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-            end
-        end)
-
-        InputDetector.MouseLeave:Connect(function()
-            if not dragging then
-                TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
-                if not Window.DragLocked then
-                    TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
-                end
-                TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                if not Window.DragLocked then
-                    TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                end
-            end
-        end)
-
-        -- State Refreshers
-        Window.RefreshLockFloat = function()
-            if Window.DragLocked then
-                LockText.Text = "Unlock UI"
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.RiskColor }):Play()
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.RiskColor, Transparency = 0.1 }):Play()
-            else
-                LockText.Text = "Lock UI"
-                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
-                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
+            if dragMoved then
+                FloatControls.Position = UDim2.new(
+                    startPos.X.Scale, startPos.X.Offset + delta.X,
+                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                )
             end
         end
+    end))
 
-        Window.RefreshLockFloat()
+    local function refreshToggleFloat()
+        Window.FloatUIOpen = Outer.Visible and true or false
+        ToggleText.Text = Window.FloatUIOpen and "Close UI" or "Open UI"
     end
 
-    
+    Window.RefreshLockFloat = function()
+        if Window.DragLocked then
+            LockText.Text = "Unlock UI"
+            TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.RiskColor }):Play()
+            TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.RiskColor, Transparency = 0.1 }):Play()
+        else
+            LockText.Text = "Lock UI"
+            TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
+            TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
+        end
+    end
+
+    Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            dragging = false
+            if not dragMoved and clickStartPos then
+                local clickX = clickStartPos.X
+                local frameAbsX = FloatControls.AbsolutePosition.X
+                local frameWidth = FloatControls.AbsoluteSize.X
+                if clickX >= frameAbsX and clickX < (frameAbsX + frameWidth / 2) then
+                    Window:Toggle()
+                    refreshToggleFloat()
+                    TweenService:Create(floatScale, TweenInfo.new(0.05), { Scale = 0.95 }):Play()
+                    task.delay(0.05, function()
+                        TweenService:Create(floatScale, TweenInfo.new(0.1), { Scale = 1 }):Play()
+                    end)
+                elseif clickX >= (frameAbsX + frameWidth / 2) and clickX <= (frameAbsX + frameWidth) then
+                    Window.DragLocked = not Window.DragLocked
+                    Outer:SetAttribute("DragLocked", Window.DragLocked and true or false)
+                    pcall(function()
+                        if SettingsPanel then
+                            SettingsPanel:SetAttribute("DragLocked", Window.DragLocked and true or false)
+                        end
+                    end)
+                    Window.RefreshLockFloat()
+                end
+            end
+        end
+    end))
+
+    InputDetector.MouseEnter:Connect(function()
+        TweenService:Create(floatScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1.05 }):Play()
+        if not Window.DragLocked then
+            TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.AccentColor, Transparency = 0.2 }):Play()
+        end
+        TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
+        if not Window.DragLocked then
+            TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
+        end
+    end)
+
+    InputDetector.MouseLeave:Connect(function()
+        if not dragging then
+            TweenService:Create(floatScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
+            if not Window.DragLocked then
+                TweenService:Create(mainStroke, TweenInfo.new(0.2), { Color = Library.OutlineColor, Transparency = 0.5 }):Play()
+            end
+            TweenService:Create(ToggleText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
+            if not Window.DragLocked then
+                TweenService:Create(LockText, TweenInfo.new(0.2), { TextColor3 = Library.FontColor }):Play()
+            end
+        end
+    end)
+
+    local oldToggle = Window.Toggle
+    function Window:Toggle()
+        oldToggle(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldShow = Window.Show
+    function Window:Show()
+        oldShow(self)
+        task.defer(refreshToggleFloat)
+    end
+    local oldHide = Window.Hide
+    function Window:Hide()
+        oldHide(self)
+        task.defer(refreshToggleFloat)
+    end
+
+    local function updateFloatVisibility()
+        local show = Library.IsMobile or Window.IsMobile or isMobile
+        FloatControls.Visible = show and true or false
+    end
+    updateFloatVisibility()
+    pcall(function()
+        if Window.ApplyMobileLayout then
+            local prev = Window.ApplyMobileLayout
+            function Window.ApplyMobileLayout()
+                prev()
+                updateFloatVisibility()
+            end
+        end
+    end)
+
+    refreshToggleFloat()
+    Window.RefreshLockFloat()
+    updateFloatVisibility()
+
     -- ════════════════════════════════════════════════════════════════════════
     -- ADD TAB
     -- ════════════════════════════════════════════════════════════════════════
@@ -2207,7 +2231,7 @@ function Library:CreateWindow(config)
         leftScroll.Size = UDim2.new(0.5, isMobile and -12 or -10, 1, isMobile and -12 or -10)
         leftScroll.Position = UDim2.new(0, isMobile and 6 or 5, 0, isMobile and 6 or 5)
         leftScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        leftScroll.ScrollBarThickness = isMobile and 5 or 0
+        leftScroll.ScrollBarThickness = 0
         leftScroll.ScrollBarImageColor3 = Library.AccentColor
         leftScroll.ScrollingEnabled = true
         leftScroll.ElasticBehavior = isMobile and Enum.ElasticBehavior.Always or Enum.ElasticBehavior.Never
@@ -2238,7 +2262,7 @@ function Library:CreateWindow(config)
         rightScroll.Size = UDim2.new(0.5, isMobile and -12 or -10, 1, isMobile and -12 or -10)
         rightScroll.Position = UDim2.new(0.5, isMobile and 6 or 5, 0, isMobile and 6 or 5)
         rightScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        rightScroll.ScrollBarThickness = isMobile and 5 or 0
+        rightScroll.ScrollBarThickness = 0
         rightScroll.ScrollBarImageColor3 = Library.AccentColor
         rightScroll.ScrollingEnabled = true
         rightScroll.ElasticBehavior = isMobile and Enum.ElasticBehavior.Always or Enum.ElasticBehavior.Never
@@ -3824,7 +3848,7 @@ end
 -- END OF LIBRARY — return for loadstring
 -- ══════════════════════════════════════════════════════════════════════════════
 
-print("Hollowoodz v2 On toppp")
+print("[Frostveil] v2.0.0 loaded")
 
 
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -7593,6 +7617,6 @@ function Library:ShowLoadingScreen(opts)
     return overlay
 end
 
-print("Hope you enjoy")
+print("[Frostveil] v2.0.0 loaded")
 
 return Library
